@@ -1,0 +1,32 @@
+# Maven
+target/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+application-local.yml
+application-local.yaml
+application-local.properties
+
+# OpenCode temporary backups
+.opencode/agents/*.bak
+
+# Permission test artifact
+permission-deny-test.txt
