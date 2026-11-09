@@ -127,6 +127,18 @@ The following approvals are required by the governance model but **no record exi
 | Cross-reference | Resolves in this log's Section 4 the rows *"Tech Lead approval of T1.1 implementation completion"* and *"Tech Lead acceptance of T1.1 verification results"* (gap G-05). The row *"Tech Lead approval of the T1.1 task scope itself"* and the Phase 1 row remain NOT AVAILABLE — this decision records acceptance, not a separate scope-approval record. Proposals P-01 … P-04 remain PROPOSED and are not affected by this decision |
 | Effect | T1.1 is formally accepted. Per the tasking of 2026-11-09, T1.2 remains **not started** and still requires the Tech Lead's explicit authorization before it may begin |
 
+### D-05 — T1.2 formally ACCEPTED
+
+| Field | Value |
+|---|---|
+| Date | 2026-11-09 |
+| Decided by | Human Tech Lead (explicit approval received directly via tasking in the current session) |
+| Scope | T1.2 — Technical baseline and dependency verification only (implementation, independent verification and final review) |
+| Evidence | - T1.2 architect proposal approved via direct tasking, quoted in `agent-reports/T1.2/developer-report.md` Section 1 ("Human Tech Lead approves the T1.2 architecture proposal, subject to the instructions below") — closes Reviewer finding R-F05 <br> - Developer `T1.2-EXEC-001-DEV-01` completed: only `pom.xml` modified; `.\mvnw.cmd clean verify` BUILD SUCCESS, exit 0 (2026-11-09T12:34:57Z); dependency tree captured — developer-report.md Sections 6–8, §11 <br> - Tester `T1.2-EXEC-001-TST-01`: **PASS** — independent `clean verify` BUILD SUCCESS (12:42:00Z), `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`, Surefire-corroborated; dependency set/scopes audited — tester-report.md Sections 8.1–8.2, §11 <br> - Reviewer `T1.2-EXEC-001-RVW-01`: **"FINAL REVIEW COMPLETE — READY FOR TECH LEAD ACCEPTANCE"**; all three T1.2 acceptance criteria met; **CRITICAL findings: none; MAJOR findings: none** — reviewer-report.md Sections 8.1, 9, 11 |
+| Minor findings | Zero Critical and zero Major findings across all three T1.2 reports (each §9). Minor findings accepted as **non-blocking**: Developer F-D01…F-D05; Tester T-F01…T-F05 and T-STIND-D01; Reviewer R-F01…R-F06 |
+| Cross-reference | Supersedes, for T1.2 specifically, Section 4's row "Any approval for tasks T1.2 onward — NOT AVAILABLE" (recorded when no T1.2 evidence existed; the row remains standing for T1.3+ per the append-only rule). Closes R-F05 (decision-log hygiene). Proposals P-01…P-04 remain PROPOSED and are unaffected |
+| Effect | T1.2 is formally accepted and **closed**. Next authorized activity: **Git/GitHub setup** (named directly by the Tech Lead in tasking; its in-project task ID was not verified by the recording execution). **T1.3 is NOT yet authorized** and may not begin without explicit Tech Lead authorization |
+
 ---
 
 **Status of this log:** Initialized 2026-11-09 with D-01 … D-03 (approved) and P-01 … P-04 (proposed). All historical approvals other than D-01 are NOT AVAILABLE. Append new entries below Section 5's template. **Updated 2026-11-09:** D-04 appended — T1.1 formally accepted by the human Tech Lead (see entry D-04).
