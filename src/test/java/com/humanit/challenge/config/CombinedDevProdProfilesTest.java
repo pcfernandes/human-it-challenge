@@ -27,6 +27,7 @@ class CombinedDevProdProfilesTest {
     @DynamicPropertySource
     static void supplyExternals(DynamicPropertyRegistry registry) {
         StartupTestHarness.supplyDevExternals(registry);
+        StartupTestHarness.supplyProdExternals(registry);
     }
 
     @Autowired

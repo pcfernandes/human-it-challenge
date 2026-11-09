@@ -8,13 +8,24 @@
 #   dev only: APP_SECURITY_DEMO_USER_USERNAME
 #             APP_SECURITY_DEMO_USER_PASSWORD
 #
-# Datasource settings arrive with T1.4 - do not add them here.
+# Common, environment-neutral persistence/migration settings (T1.4).
+# Datasource URLs/credentials are profile-specific (see application-dev.yml /
+# application-prod.yml) and are never committed here.
 
 spring:
   application:
     name: human-it-challenge
   profiles:
     default: dev
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  sql:
+    init:
+      mode: never
 
 app:
   pagination:
