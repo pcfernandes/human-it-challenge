@@ -1,0 +1,6 @@
+-- Flyway baseline migration (T1.4).
+-- No application tables are created here; business schema arrives in T2.1.
+-- This file is intentionally comment-only so that Flyway's migration pipeline is
+-- exercised without introducing SQL operations that do not correspond to a real
+-- schema change. If the installed Flyway version cannot apply a comment-only
+-- migration, this file must be removed and the first migration deferred to T2.1.

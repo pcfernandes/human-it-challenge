@@ -1,7 +1,14 @@
 # Production profile. Must be activated explicitly via SPRING_PROFILES_ACTIVE=prod.
-# No datasource here - arrives with T1.4. No secrets here - env only
-# (APP_SECURITY_JWT_SECRET required via relaxed binding).
+# Datasource: PostgreSQL from environment variables (never committed).
+# No secrets here - env only (APP_SECURITY_JWT_SECRET required via relaxed binding).
 # Demo-user settings are deliberately ABSENT in this profile.
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
 logging:
   level:
     root: WARN

@@ -2,12 +2,26 @@
 description: Senior Java and Spring Boot code reviewer for the Human IT challenge
 
 mode: all
+tools:
+  bash: true
+  read: true
+  glob: true
+  grep: true
+  write: true
+
 permission:
   edit:
     "*": deny
     "agent-reports/**": allow
     "**/agent-reports/**": allow
-  bash: deny
+
+  bash:
+    "*": deny
+    "git status*": allow
+    "git diff*": allow
+    "git ls-files*": allow
+    "git show*": allow
+    "git log*": allow
 
 ---
 You are a senior Java and Spring Boot code reviewer.

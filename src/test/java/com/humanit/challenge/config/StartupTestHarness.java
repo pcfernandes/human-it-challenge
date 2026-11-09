@@ -47,6 +47,12 @@ public final class StartupTestHarness {
     /** Registers the prod-required externals (secret only) for @SpringBootTest contexts. */
     public static void supplyProdExternals(DynamicPropertyRegistry registry) {
         registry.add("app.security.jwt.secret", () -> VALID_SECRET_32_BYTES);
+        // T1.4: prod datasource is required; tests run against an in-memory H2 override
+        // so no running PostgreSQL instance is needed for configuration verification.
+        registry.add("SPRING_DATASOURCE_URL", () -> "jdbc:h2:mem:humanit-prod-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+        registry.add("SPRING_DATASOURCE_USERNAME", () -> "sa");
+        registry.add("SPRING_DATASOURCE_PASSWORD", () -> "");
+        registry.add("spring.datasource.driver-class-name", () -> "org.h2.Driver");
     }
 
     /** Dev-start environment: valid 32-byte secret + demo-user credentials (mutable map). */
@@ -61,7 +67,14 @@ public final class StartupTestHarness {
 
     /** Prod-start environment: only the secret is provided (demo-user keys are dev-only). */
     public static Map<String, String> prodProperties() {
-        return propertyMap(VALID_SECRET_32_BYTES);
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("app.security.jwt.secret", VALID_SECRET_32_BYTES);
+        // T1.4: prod datasource is required; tests run against an in-memory H2 override.
+        map.put("SPRING_DATASOURCE_URL", "jdbc:h2:mem:humanit-prod-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+        map.put("SPRING_DATASOURCE_USERNAME", "sa");
+        map.put("SPRING_DATASOURCE_PASSWORD", "");
+        map.put("spring.datasource.driver-class-name", "org.h2.Driver");
+        return map;
     }
 
     /** Runs the application and returns the running context (caller must close it). */
