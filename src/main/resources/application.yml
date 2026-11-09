@@ -1,3 +1,30 @@
+# Common, environment-neutral configuration (T1.3).
+#
+# No profile is set? The 'dev' profile then applies automatically (spring.profiles.default).
+# PRODUCTION MUST START WITH: SPRING_PROFILES_ACTIVE=prod
+#
+# Secrets are NEVER committed anywhere. Supply them by environment:
+#   dev/prod: APP_SECURITY_JWT_SECRET            (required, standard Base64, >= 32 decoded bytes)
+#   dev only: APP_SECURITY_DEMO_USER_USERNAME
+#             APP_SECURITY_DEMO_USER_PASSWORD
+#
+# Datasource settings arrive with T1.4 - do not add them here.
+
 spring:
   application:
     name: human-it-challenge
+  profiles:
+    default: dev
+
+app:
+  pagination:
+    # HTTP page/size parameter validation belongs to T2.8; these are the approved
+    # service-level defaults and the hard maximum size.
+    default-page: 0
+    default-page-size: 20
+    max-page-size: 100
+  security:
+    jwt:
+      # The Base64-encoded secret itself is externalized via APP_SECURITY_JWT_SECRET
+      # and is never committed in either profile file.
+      expiration-minutes: 60
