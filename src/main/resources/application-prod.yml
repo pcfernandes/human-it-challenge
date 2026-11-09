@@ -1,0 +1,8 @@
+# Production profile. Must be activated explicitly via SPRING_PROFILES_ACTIVE=prod.
+# No datasource here - arrives with T1.4. No secrets here - env only
+# (APP_SECURITY_JWT_SECRET required via relaxed binding).
+# Demo-user settings are deliberately ABSENT in this profile.
+logging:
+  level:
+    root: WARN
+    com.humanit.challenge: INFO

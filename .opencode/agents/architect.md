@@ -5,6 +5,7 @@ mode: all
 permission:
   edit:
     "*": deny
+    "agent-reports/**": allow
     "**/agent-reports/**": allow
   bash: deny
 
