@@ -81,6 +81,39 @@ class SourceScanAuditTest {
         }
     }
 
+    @Test
+    void noTestScaffoldingInProductionSource() throws IOException {
+        Path root = projectRoot();
+        Path mainRoot = root.resolve("src/main");
+
+        // No test-only paths or test scaffolding tokens anywhere under src/main.
+        try (Stream<Path> all = Files.walk(mainRoot)) {
+            all.forEach(path -> assertThat(path.toString())
+                    .as("src/main must not contain test scaffolding paths")
+                    .doesNotContain("__test"));
+        }
+
+        Path sources = mainRoot.resolve("java");
+        try (Stream<Path> sourceFiles = Files.walk(sources)) {
+            sourceFiles
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.toString().endsWith(".java"))
+                    .forEach(file -> {
+                        try {
+                            String content = Files.readString(file);
+                            assertThat(content)
+                                    .as(file + " must not reference test scaffolding")
+                                    .doesNotContain("TestErrorController");
+                            assertThat(content)
+                                    .as(file + " must not reference test-only paths")
+                                    .doesNotContain("__test");
+                        } catch (IOException ex) {
+                            throw new IllegalStateException("Cannot read " + file, ex);
+                        }
+                    });
+        }
+    }
+
     private static Path projectRoot() {
         Path dir = Path.of(System.getProperty("user.dir")).toAbsolutePath();
         for (Path current = dir; current != null; current = current.getParent()) {

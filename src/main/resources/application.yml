@@ -27,6 +27,10 @@ spring:
     init:
       mode: never
 
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
+
 app:
   pagination:
     # HTTP page/size parameter validation belongs to T2.8; these are the approved
