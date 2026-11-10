@@ -195,3 +195,40 @@ The following approvals are required by the governance model but **no record exi
 | Minor findings | Zero Critical, zero Major and zero Minor findings across all three T1.6 reports (Developer §9; Tester §9; Reviewer §9). Informational observations Info-01…Info-05 are accepted as non-blocking and remain tracked |
 | Cross-reference | Supersedes, for T1.6 specifically, Section 4's row "Any approval for tasks T1.2 onward — NOT AVAILABLE" (recorded when no T1.6 evidence existed; the row remains standing for tasks beyond Phase 1 per the append-only rule). Resolves the outstanding Phase 1 completion row in Section 4 ("Tech Lead approval of Phase 1 completion — NOT AVAILABLE") by recording Phase 1 completion. Closes the Reviewer's outstanding item (Tech Lead final acceptance of T1.6 pending) and the Tester's outstanding items. Deferred work — PostgreSQL integration, H2 Console/Swagger UI reachability, 409/401/403 handlers, problem-type URIs, bearer OpenAPI scheme, structured logging, global/object-level constraint violation mapping, `spring.jpa.open-in-view` hardening, stale `reports/task-status-report.md` — remains tracked for later phases. Proposals P-01 … P-04 remain PROPOSED and are unaffected |
 | Effect | T1.6 is formally accepted and **closed**. Phase 1 is **COMPLETE**. 41/41 automated tests passed. Developer, Tester and Reviewer completed. No Critical or Major blockers. Approved documentation deliverables (`README.md`, `CHANGELOG.md`) recorded. Deferred work remains tracked. **Authorization to proceed to Phase 2 / T2.1** is granted. |
+
+### D-10 — T2.1 ACCEPTED WITH DOCUMENTED MINOR FINDINGS
+
+| Field | Value |
+|---|---|
+| Date | 2026-11-09 |
+| Decided by | Human Tech Lead (explicit approval received directly in the tasking for execution `T2.1-EXEC-009-ARCH-03`) |
+| Scope | T2.1 — Domain model and persistence implementation, independent verification, and final review |
+| Evidence | - Human Tech Lead explicitly approved T2.1 acceptance with documented Minor findings in the direct tasking for this execution. <br> - Tester `T2.1-EXEC-006-TST-02`: **PASS WITH FINDINGS**; report records 61 tests passed, 0 failures, 0 errors, 0 skipped, and confirms R-F01, R-F02 and R-F03 resolved (`agent-reports/T2.1/tester-report.md`, Sections 8–11). <br> - Reviewer `T2.1-EXEC-007-REV-02`: **PASS WITH FINDINGS**; R-F01, R-F02 and R-F03 resolved, with optional coverage and scope-control findings documented; no Critical or Major findings (`agent-reports/T2.1/reviewer-report.md`, Sections 9–12). <br> - Developer `T2.1-EXEC-005-DEV-02`: clean verification reported 61 tests passed, 0 failures, 0 errors, 0 skipped (`agent-reports/T2.1/developer-report.md`, Sections 7–11). |
+| Minor findings / accepted limitations | Optional pagination boundary/sorting tests; optional same-transient-Client regression test; PostgreSQL validation deferred to T5.2; exclude `.opencode/agents/reviewer.md` from the implementation commit. |
+| Cross-reference | Resolves the Tech Lead acceptance pending statements in the Developer, Tester and Reviewer reports for T2.1. The previous Architect execution `T2.1-EXEC-008-ARCH-02` was blocked and, per direct tasking, changed no files and did not record D-10; this entry is the first D-10 record. |
+| Effect | T2.1 is **ACCEPTED WITH DOCUMENTED MINOR FINDINGS** and closed. R-F01, R-F02 and R-F03 are resolved. No outstanding Critical or Major findings are accepted as blockers. The accepted limitations above remain documented; `.opencode/agents/reviewer.md` must be excluded from the implementation commit. This decision does not authorize an unrelated implementation change or commit. |
+
+**Updated 2026-11-09:** D-10 appended — T2.1 accepted with documented Minor findings by the human Tech Lead (see entry D-10).
+
+### D-11 — Application-layer separation for Client and Document workflows
+
+| Field | Value |
+|---|---|
+| Date | 2026-11-09 |
+| Decided by | Human Tech Lead (explicit approval received directly via tasking in the current session) |
+| Scope | Architecture for Client and Document functionality from T2.2 onward; does not reopen or alter accepted T2.1. |
+| Approved rules | 1. Entities are persistence-focused JPA models: mappings, fields, relationships, constructors, getters/setters, and only minimal behavior required for persistence consistency. <br> 2. Entities must not contain application-service logic, repository orchestration, transaction boundaries, HTTP concerns, or DTO conversion methods. <br> 3. DTO-to-entity and entity-to-DTO transformations belong to dedicated mapper classes. <br> 4. Repositories own database access. <br> 5. Services own actual use cases, business rules, ownership enforcement, orchestration, and transaction boundaries. <br> 6. Do not introduce placeholder services or unnecessary pass-through abstractions. Introduce `ClientService` and `DocumentService` when their actual use cases require them. <br> 7. REST resources/controllers handle HTTP concerns and delegate application workflows to services. <br> 8. Preserve existing T2.1 persistence behavior, ownership invariants, optimistic locking, and tests. |
+| Evidence | Direct human Tech Lead tasking in the current session (2026-11-09), which explicitly states these rules are approved and requests D-11 be recorded. |
+| Effect | D-11 is the approved architecture constraint for upcoming Client/Document application work, including T2.2, T2.3 and T2.4. It does not change any approved REST contract or acceptance criterion and does not authorize refactoring or reopening T2.1. The requested implementation-plan and agent-instruction edits were not made in this Architect execution; see `agent-reports/T2.2/architect-proposal.md` for the role-scope limitation and handoff. |
+
+### D-12 — D-11 architecture documentation review accepted
+
+| Field | Value |
+|---|---|
+| Date | 2026-11-09 |
+| Decided by | Human Tech Lead (explicit approval and F-01 acceptance received directly via tasking in the current session) |
+| Scope | Formal closure of the D-11 architecture documentation review only. |
+| Evidence | - Human Tech Lead tasking explicitly states that D-11 is approved and accepted with documented Minor finding F-01; it explicitly accepts F-01 as a documentation clarification only, not a reopening of T2.1. <br> - Reviewer `T2.2-EXEC-003-REV-01`: **PASS WITH FINDINGS**; 0 Critical, 0 Major, 1 Minor (`agent-reports/T2.2/reviewer-report.md`, Sections 9–11). <br> - Reviewer finding F-01 states the implementation-plan.md T2.1 Developer instruction was clarified after T2.1 acceptance; the report records that the wording does not change T2.1 implementation, acceptance criteria or behavior. <br> - `implementation-plan.md` records the D-11 boundaries and explicitly says the clarification does not reopen or require refactoring T2.1 (Phase 2 boundaries and T2.1 Developer instruction). |
+| Finding disposition | F-01 is explicitly accepted by the Human Tech Lead. No corrective action is required for F-01. |
+| Cross-reference | D-11 remains authoritative for future implementation. T2.1 remains accepted and closed under D-10; this decision does not reopen T2.1. |
+| Effect | The D-11 architecture documentation review is accepted and closed with the documented Minor finding F-01. This decision authorizes documentation closure only; it does not authorize implementation work or Git mutations. |
