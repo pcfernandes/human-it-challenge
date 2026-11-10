@@ -200,10 +200,13 @@ Implement the complete Client and Document domain behavior, including CRUD, vali
 - **Tester:** Verify field validation and null/blank rejection scenarios.
 - **Reviewer:** Confirm DTO separation and validation completeness.
 - **Acceptance criteria:**
-  - Required Client and Document fields are validated.
-  - Email format is validated.
-  - Expired Documents are accepted.
-  - `description` remains optional.
+  - **PATCH tri-state binding:** A project-owned Jackson-integrated representation distinguishes an omitted property (`ABSENT`), explicit JSON `null` (`PRESENT_NULL`) and a supplied non-null value (`PRESENT_VALUE`). Binding verification distinguishes all three cases; no external JSON-nullable dependency is introduced.
+  - **Response DTOs and mapping boundary:** `ClientResponse` contains nested `DocumentResponse` entries. Each `DocumentResponse` contains scalar `clientId` and no nested `Client`; DTOs form no recursive graph. Mappers perform DTO/entity transformation without repository access. Any future use case producing `ClientResponse` intentionally loads the required lazy Documents association.
+  - **Nested Client PUT:** Each supplied Document requires `number` and `expirationDate`. Existing Documents require both ID and expected version; new Documents provide neither ID nor version. Omitted or empty `documents` preserves existing Documents; explicit `documents: null` is invalid. Omission does not delete Documents, and updates cannot transfer ownership.
+  - **Client POST collection exception:** `documents: null` is treated as an omitted collection for Client POST only. It does not apply to Client PUT or PATCH, where explicit `documents: null` is invalid.
+  - **Validation:** Negative expected versions are rejected. Apply `@Size` maxima: Client `firstName` 100, `lastName` 100, `taxIdentifier` 50, `email` 255 and `phoneNumber` 50; Document `number` 100 and `description` 1000. Required-field and email-format validation remain enforced; `description` remains optional, and expired Documents are accepted.
+  - **Nested Client PATCH:** Existing nested Documents require ID and expected version and support partial scalar updates (omitted values remain unchanged). New nested Documents have neither ID nor version and require creation fields `number` and `expirationDate`. Explicit null for required fields is invalid; explicit null for optional `description` clears it. Client PATCH `documents: null` is invalid; omitted or empty `documents` preserves existing Documents. PATCH does not implicitly delete Documents or transfer ownership.
+  - **T2.2 architecture and scope:** T2.2 uses DTOs, Bean Validation, Jackson binding and dedicated mappers only. Mappers contain no repository access, ownership resolution, transaction orchestration, HTTP behavior or business workflows. No services or REST resources are introduced in T2.2. Preserve the accepted T2.1 behavior and persistence contracts; ownership resolution and intentional loading of lazy associations belong to future use cases.
 
 #### T2.3 — Client CRUD endpoints
 
