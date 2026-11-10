@@ -209,3 +209,26 @@ The following approvals are required by the governance model but **no record exi
 | Effect | T2.1 is **ACCEPTED WITH DOCUMENTED MINOR FINDINGS** and closed. R-F01, R-F02 and R-F03 are resolved. No outstanding Critical or Major findings are accepted as blockers. The accepted limitations above remain documented; `.opencode/agents/reviewer.md` must be excluded from the implementation commit. This decision does not authorize an unrelated implementation change or commit. |
 
 **Updated 2026-11-09:** D-10 appended — T2.1 accepted with documented Minor findings by the human Tech Lead (see entry D-10).
+
+### D-11 — Application-layer separation for Client and Document workflows
+
+| Field | Value |
+|---|---|
+| Date | 2026-11-09 |
+| Decided by | Human Tech Lead (explicit approval received directly via tasking in the current session) |
+| Scope | Architecture for Client and Document functionality from T2.2 onward; does not reopen or alter accepted T2.1. |
+| Approved rules | 1. Entities are persistence-focused JPA models: mappings, fields, relationships, constructors, getters/setters, and only minimal behavior required for persistence consistency. <br> 2. Entities must not contain application-service logic, repository orchestration, transaction boundaries, HTTP concerns, or DTO conversion methods. <br> 3. DTO-to-entity and entity-to-DTO transformations belong to dedicated mapper classes. <br> 4. Repositories own database access. <br> 5. Services own actual use cases, business rules, ownership enforcement, orchestration, and transaction boundaries. <br> 6. Do not introduce placeholder services or unnecessary pass-through abstractions. Introduce `ClientService` and `DocumentService` when their actual use cases require them. <br> 7. REST resources/controllers handle HTTP concerns and delegate application workflows to services. <br> 8. Preserve existing T2.1 persistence behavior, ownership invariants, optimistic locking, and tests. |
+| Evidence | Direct human Tech Lead tasking in the current session (2026-11-09), which explicitly states these rules are approved and requests D-11 be recorded. |
+| Effect | D-11 is the approved architecture constraint for upcoming Client/Document application work, including T2.2, T2.3 and T2.4. It does not change any approved REST contract or acceptance criterion and does not authorize refactoring or reopening T2.1. The requested implementation-plan and agent-instruction edits were not made in this Architect execution; see `agent-reports/T2.2/architect-proposal.md` for the role-scope limitation and handoff. |
+
+### D-12 — D-11 architecture documentation review accepted
+
+| Field | Value |
+|---|---|
+| Date | 2026-11-09 |
+| Decided by | Human Tech Lead (explicit approval and F-01 acceptance received directly via tasking in the current session) |
+| Scope | Formal closure of the D-11 architecture documentation review only. |
+| Evidence | - Human Tech Lead tasking explicitly states that D-11 is approved and accepted with documented Minor finding F-01; it explicitly accepts F-01 as a documentation clarification only, not a reopening of T2.1. <br> - Reviewer `T2.2-EXEC-003-REV-01`: **PASS WITH FINDINGS**; 0 Critical, 0 Major, 1 Minor (`agent-reports/T2.2/reviewer-report.md`, Sections 9–11). <br> - Reviewer finding F-01 states the implementation-plan.md T2.1 Developer instruction was clarified after T2.1 acceptance; the report records that the wording does not change T2.1 implementation, acceptance criteria or behavior. <br> - `implementation-plan.md` records the D-11 boundaries and explicitly says the clarification does not reopen or require refactoring T2.1 (Phase 2 boundaries and T2.1 Developer instruction). |
+| Finding disposition | F-01 is explicitly accepted by the Human Tech Lead. No corrective action is required for F-01. |
+| Cross-reference | D-11 remains authoritative for future implementation. T2.1 remains accepted and closed under D-10; this decision does not reopen T2.1. |
+| Effect | The D-11 architecture documentation review is accepted and closed with the documented Minor finding F-01. This decision authorizes documentation closure only; it does not authorize implementation work or Git mutations. |

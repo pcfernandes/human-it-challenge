@@ -168,13 +168,21 @@ Establish the project baseline in small, independently approved tasks. **The fir
 
 Implement the complete Client and Document domain behavior, including CRUD, validation, transactional integrity, pagination, version validation, optimistic locking and Document ownership rules. These controls are mandatory in this phase and are not deferred.
 
+### Application-layer and persistence boundaries (D-11)
+
+- Entities are persistence-focused JPA models containing mappings, fields, relationships, constructors, getters/setters and only minimal behavior required for persistence consistency. They must not perform DTO conversion, repository orchestration, HTTP processing or application-service logic. Existing JPA relationship-consistency helpers may remain inside entities.
+- Dedicated mapper classes own DTO/entity transformations. T2.2 implements the mappers alongside the request/response DTO contracts and validation; entities do not provide DTO conversion methods.
+- Repositories own database access. Client and Document CRUD workflows in T2.3 and T2.4 follow Resource -> Service -> Repository separation: REST resources/controllers handle HTTP concerns and delegate application workflows to services, and services use repositories for database access.
+- Introduce `ClientService` and `DocumentService` only where actual use cases justify them. Do not add placeholder services or unnecessary pass-through services. Services own business rules, ownership enforcement, orchestration and transaction boundaries when those responsibilities are required by the use case.
+- Preserve the accepted T2.1 persistence behavior, including its minimal JPA relationship-consistency helpers; this clarification does not reopen or require refactoring T2.1. Preserve all approved API endpoints and contracts, acceptance criteria, ownership rules, versioning/optimistic-locking behavior and transactional/rollback contracts.
+
 ### Task list
 
 #### T2.1 — Domain model, mappings and database schema
 
 - **In scope:** `Client` and `Document` JPA entities, required fields, `@Version` fields, one-to-many relationship, database constraints for required fields, uniqueness and foreign keys, cascade delete. Flyway migration for schema.
 - **Out of scope:** REST controllers and security.
-- **Developer:** Implement entities, repositories and migration.
+- **Developer:** Implement persistence-focused entities, repositories and migration. Keep entity behavior limited to persistence consistency; existing relationship-consistency helpers may remain. Do not add DTO conversion, repository orchestration, HTTP concerns or application-service logic to entities. Preserve the accepted T2.1 persistence behavior.
 - **Tester:** Verify repository persistence and cascade deletion.
 - **Reviewer:** Check aggregate design, constraint correctness and cascade behavior.
 - **Acceptance criteria:**
@@ -188,7 +196,7 @@ Implement the complete Client and Document domain behavior, including CRUD, vali
 
 - **In scope:** Request and response DTOs, Bean Validation, mapper layer, validation messages.
 - **Out of scope:** Security DTOs.
-- **Developer:** Implement DTO contracts and mapping.
+- **Developer:** Implement DTO contracts, validation and dedicated mapper classes for DTO/entity transformations. Keep mapping outside the entities.
 - **Tester:** Verify field validation and null/blank rejection scenarios.
 - **Reviewer:** Confirm DTO separation and validation completeness.
 - **Acceptance criteria:**
@@ -201,7 +209,7 @@ Implement the complete Client and Document domain behavior, including CRUD, vali
 
 - **In scope:** `POST /clients`, `GET /clients`, `GET /clients/{id}`, `PUT /clients/{id}`, `PATCH /clients/{id}`, `DELETE /clients/{id}`.
 - **Out of scope:** JWT enforcement (Phase 3).
-- **Developer:** Implement controller and service methods.
+- **Developer:** Implement the Client REST resource/controller and the use-case-justified service/repository workflow with Resource -> Service -> Repository separation. The resource handles HTTP concerns and delegates application workflows to services; services own applicable business rules, orchestration, ownership enforcement and transaction boundaries. Do not introduce a placeholder or pass-through `ClientService`; add it only when justified by actual Client use cases.
 - **Tester:** Verify happy-path endpoint tests for each Client endpoint.
 - **Reviewer:** Check REST semantics, status codes and layer separation.
 - **Acceptance criteria:**
@@ -215,7 +223,7 @@ Implement the complete Client and Document domain behavior, including CRUD, vali
 
 - **In scope:** `POST /clients/{clientId}/documents`, `GET /clients/{clientId}/documents`, `GET /clients/{clientId}/documents/{documentId}`, `PUT /clients/{clientId}/documents/{documentId}`, `PATCH /clients/{clientId}/documents/{documentId}`, `DELETE /clients/{clientId}/documents/{documentId}`.
 - **Out of scope:** Document transfer between Clients.
-- **Developer:** Implement nested Document controller and service methods.
+- **Developer:** Implement the nested Document REST resource/controller and the use-case-justified service/repository workflow with Resource -> Service -> Repository separation. The resource handles HTTP concerns and delegates application workflows to services; services own applicable business rules, ownership enforcement, orchestration and transaction boundaries. Do not introduce a placeholder or pass-through `DocumentService`; add it only when justified by actual Document use cases.
 - **Tester:** Verify happy-path endpoint tests for each Document endpoint.
 - **Reviewer:** Check ownership enforcement and status codes.
 - **Acceptance criteria:**
@@ -547,3 +555,4 @@ This consolidated plan updates the previously approved six-phase strategy by:
 - Resolving Phase 2 task boundaries so T2.3/T2.4 CRUD acceptance criteria do not depend on T2.6/T2.7 concurrency and transactional work; version, conflict and transactional criteria remain in T2.6 and T2.7.
 - Moving the cross-Client aggregate association HTTP 409 acceptance criterion from T2.4 to T2.5 while retaining the wrong-Client nested resource HTTP 404 rule in T2.4.
 - Clarifying that PostgreSQL integration verification requires an available PostgreSQL instance while full Docker Compose verification remains in Phase 5.
+- Recording approved D-11 application-layer and persistence boundaries for T2.2, T2.3 and T2.4 without changing API endpoints or unrelated acceptance criteria.
