@@ -2,7 +2,7 @@
 
 
 
-**Status:** Requirements decisions and the implementation plan are approved by the Tech Lead. Application implementation has not started.  
+**Status:** Requirements decisions and the implementation plan are approved by the Tech Lead. T2.1 domain model/persistence implementation is complete and accepted under D-10. T2.2 architecture is approved under D-13; T2.2 application implementation has not yet been authorized. Later implementation tasks remain pending.
 
 **Purpose:** Document the functional, technical and quality decisions agreed during requirements analysis.
 
@@ -959,5 +959,5 @@ These are design tasks, not authorization to implement code.
 
 ---
 
-**Status:** Requirements decisions and the implementation plan are approved by the Tech Lead. Application implementation has not started.
+**Status:** Requirements decisions and the implementation plan are approved by the Tech Lead. T2.1 domain model/persistence implementation is complete and accepted under D-10. T2.2 architecture is approved under D-13; T2.2 application implementation has not yet been authorized. Later implementation tasks remain pending.
 

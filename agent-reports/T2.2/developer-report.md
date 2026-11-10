@@ -1,95 +1,108 @@
-# Developer Report — Apply Approved D-11 to Implementation Plan
+# Developer Report — T2.2 Part 3: Client and Document Mappers
 
 ## 1. Task ID
 
-**VERIFIED:** T2.2 — Apply the human-approved D-11 architecture decision to `implementation-plan.md`.
+**VERIFIED:** T2.2 — Part 3 (dedicated ClientMapper and DocumentMapper), execution `T2.2-EXEC-013-DEV-03`. Authorized by the Human Tech Lead tasking for this execution. Decisions D-10, D-11, D-12 and D-13 remain authoritative.
 
 ## 2. Execution identifier and date
 
 | Field | Value |
 |---|---|
-| Execution ID | `T2.2-EXEC-002-DEV-01` |
-| Date | 2026-11-09 |
-| Prior Developer execution | **NOT AVAILABLE:** The T2.2 task directory contained no prior `developer-report.md` when inspected. |
-| Archive | **VERIFIED:** No predecessor Developer primary report existed to archive; no history copy was required. |
+| Execution ID | `T2.2-EXEC-013-DEV-03` (supplied by tasking) |
+| Date | 2026-11-10 (Europe/Lisbon) |
+| Branch | **VERIFIED:** `git branch --show-current` = `feature/T2.2-dtos-mappers` (not switched) |
+| Previous primary archived | **VERIFIED:** prior primary copied byte-for-byte to `agent-reports/T2.2/history/developer-004.md`; SHA-256 identical (`1917924F…2910165`). |
 
 ## 3. Agent role and model
 
-- **VERIFIED:** Role — Developer, senior Java and Spring Boot developer.
-- **VERIFIED:** Model — `gpt-6-luna` (exact model ID `opencode-go/gpt-6-luna`).
+- **VERIFIED:** Role — Developer, senior Java and Spring Boot engineer.
+- **VERIFIED:** Model — `beam-free` (exact model ID `opencode-go/beam-free`).
 
 ## 4. Authorized scope
 
-**VERIFIED (direct tasking):** Read D-11, the T2.2 Architect proposal, `implementation-plan.md`, and `agent-reports/README.md`; update only `implementation-plan.md` to require the listed D-11 entity, mapper, layering, service and preservation constraints; create this report under `agent-reports/T2.2/`; do not alter API endpoints or unrelated acceptance criteria.
-
-**VERIFIED (task constraints):** Do not change Java source or tests, `requirements-decisions.md`, `agent-reports/decisions.md`, `.opencode/agents/*`, or existing T2.1 reports. Do not stage, commit or push.
+**VERIFIED (Human Tech Lead tasking):** Implement dedicated `ClientMapper` and `DocumentMapper`; focused mapper tests; no services/controllers; no Git mutations; no changes to T2.1 entities/migrations or Parts 1/2 unless essential to compile.
 
 ## 5. Files inspected
 
-| Artifact | Evidence / relevance |
-|---|---|
-| `agent-reports/README.md` | **VERIFIED:** Mandatory 13-section report structure, evidence markers and execution-history archival convention. |
-| `agent-reports/decisions.md` | **VERIFIED:** D-11's approved rules and effect for T2.2–T2.4. Not edited in this execution. |
-| `agent-reports/T2.2/architect-proposal.md` | **VERIFIED:** Architect's D-11 findings and handoff identifying the implementation-plan clarification as outstanding. Not edited. |
-| `implementation-plan.md` | **VERIFIED:** Existing Phase 2 task list, T2.1–T2.4 descriptions, acceptance criteria and Change Summary, used as the edit target. |
-| `agent-reports/T2.2/` | **VERIFIED:** Directory contained `architect-proposal.md` and no prior Developer primary report before this report was created. |
+`domain/Client.java`, `domain/Document.java`, all DTOs under `dto/client` and `dto/document`, `dto/patch/PatchValue.java`, `implementation-plan.md` (T2.2 boundaries), `agent-reports/T2.2/history/architect-003.md` (mapper responsibilities), previous Developer reports. No source files modified except the new mapper package and tests.
 
 ## 6. Files changed
 
+### Created — application code
+
+| Path | Purpose |
+|---|---|
+| `src/main/java/com/humanit/challenge/mapper/ClientMapper.java` | `toEntity(ClientCreateRequest)` (creates Client plus nested Documents via `Client.addDocument`); `toResponse(Client)`; `updateFromPut(ClientPutRequest, Client)`; `updateFromPatch(ClientPatchRequest, Client)`; aliases (`create`, `toDto`, `applyPut`, `applyPatch`, `update`, `updateFrom`). |
+| `src/main/java/com/humanit/challenge/mapper/DocumentMapper.java` | `toEntity(DocumentCreateRequest[, Client])`, `toEntity(ClientDocumentPutRequest, Client)`, `toEntity(ClientDocumentPatchRequest, Client)`; `toResponse(Document)` (scalar `clientId`); `updateFromPut(..., Document)` for `DocumentPutRequest` and `ClientDocumentPutRequest`; `updateFromPatch(..., Document)` for `DocumentPatchRequest` and `ClientDocumentPatchRequest` (PRESENT_NULL clears description); aliases. |
+
+### Created — tests
+
+| Path | Purpose |
+|---|---|
+| `src/test/java/com/humanit/challenge/mapper/ClientMapperTest.java` | Create/response mapping; PUT scalar update without identity/version change; PATCH omitted preserved; PATCH supplied updated. |
+| `src/test/java/com/humanit/challenge/mapper/DocumentMapperTest.java` | Create/response mapping; PUT update without identity/version change; PATCH omitted preserved; PATCH supplied updated; `description: null` clears. |
+
+### Archive
+
 | Path | Change |
 |---|---|
-| `implementation-plan.md` | **VERIFIED:** Added D-11 application-layer and persistence boundaries in Phase 2; refined the T2.1, T2.2, T2.3 and T2.4 Developer responsibilities; noted the D-11 clarification in the Change Summary. Existing endpoints and acceptance criteria were not edited. |
-| `agent-reports/T2.2/developer-report.md` | **VERIFIED:** Created this execution report. |
-
-**VERIFIED:** No Java source or tests, requirements file, decision log, agent definition, T2.1 report or Architect report was changed by this execution.
+| `agent-reports/T2.2/history/developer-004.md` | Unchanged copy of the previous primary Developer report. |
 
 ## 7. Commands executed
 
-- **VERIFIED:** `git diff -- implementation-plan.md; git status --short` — displayed the plan diff and worktree status. No `git add`, commit or push was run.
-- **VERIFIED:** No test or build command was run; this was a planning-document-only change and no application code or tests were modified.
-- **VERIFIED:** File inspection and edits otherwise used the provided read and patch tools.
+| Command | Result |
+|---|---|
+| `.\mvnw.cmd -B -q compile` | **VERIFIED:** exit 0 |
+| `.\mvnw.cmd -B clean test` | **VERIFIED:** `Tests run: 244, Failures: 0, Errors: 0, Skipped: 0`, `BUILD SUCCESS` |
+| `.\mvnw.cmd -B -q clean test` (required) | **VERIFIED:** `Tests run: 244, Failures: 0, Errors: 0, Skipped: 0`, `BUILD SUCCESS` |
 
 ## 8. Evidence and observed results
 
-- **VERIFIED (`agent-reports/decisions.md`, D-11):** Approved requirements cover persistence-focused entities, dedicated mapper classes, repository database access, use-case-driven services, HTTP/resource delegation, and preservation of existing behavior/contracts.
-- **VERIFIED (`implementation-plan.md` diff):** The Phase 2 clarification now explicitly limits entities to persistence concerns and minimal persistence consistency; excludes DTO conversion, repository orchestration, HTTP concerns and application-service logic; and permits existing JPA relationship-consistency helpers.
-- **VERIFIED (`implementation-plan.md` diff):** T2.2 now assigns DTO/entity transformations to dedicated mapper classes outside entities.
-- **VERIFIED (`implementation-plan.md` diff):** T2.3 Client CRUD and T2.4 Document CRUD now state Resource -> Service -> Repository separation, HTTP delegation from REST resources, service responsibilities, and no placeholder or unnecessary pass-through service; `ClientService` and `DocumentService` are conditioned on actual use cases.
-- **VERIFIED (`implementation-plan.md` diff):** The clarification preserves accepted T2.1 persistence behavior and approved API contracts/endpoints, acceptance criteria, ownership rules, versioning/optimistic-locking behavior, and transaction/rollback contracts. Existing endpoint text and acceptance criteria were not changed.
-- **VERIFIED (`git diff` output):** The implementation-plan diff contains only the D-11 clarification, task responsibility updates, and matching Change Summary bullet. Git emitted a working-copy LF-to-CRLF warning for `implementation-plan.md`.
-- **VERIFIED (`git status --short` output):** At inspection time the status also displayed `agent-reports/decisions.md` as modified, `agent-reports/T2.2/` as untracked, and `bash.exe.stackdump` and `hs_err_pid6852.log` as untracked.
-- **NOT AVAILABLE:** No initial worktree status from before this execution was captured, so the provenance of those other status entries cannot be established from this execution. This execution did not edit `agent-reports/decisions.md` and did not intentionally create or alter the two log/stackdump paths.
-- **VERIFIED:** No application test results were produced or claimed.
+- **VERIFIED:** 244 tests run, 0 failures, 0 errors, 0 skipped (final run above).
+- **VERIFIED:** New mapper tests: `ClientMapperTest` 5/5, `DocumentMapperTest` 6/6, all passing.
+- **VERIFIED:** No T2.1 entity, repository, migration or Part 1/2 DTO file was modified (`git diff --stat` shows only the two new mapper sources, two new test sources and this report/archive).
+- **VERIFIED:** Mapper update methods do not set `id`, `version` or `client`/ownership; they only update editable scalars. `PRESENT_NULL` clears `description` only; `ABSENT` leaves values untouched; `PRESENT_VALUE` applies the supplied value.
+- **VERIFIED:** No repository access or lazy-loading side effects in update methods; nested create uses in-memory `Client.addDocument`.
 
 ## 9. Findings and severity
 
-- **VERIFIED — No blocking issue identified in the requested documentation edit.** The requested architecture constraints are explicit in the Phase 2 plan, and the existing endpoint and acceptance-criteria text remains unchanged.
-- **VERIFIED — Informational, working-tree hygiene:** The status output included additional modified/untracked paths whose provenance is **NOT AVAILABLE** because no pre-execution status was captured. They were not intentionally changed by this task; their disposition is outside the requested scope.
-- **VERIFIED — Informational, line endings:** Git reported that LF in `implementation-plan.md` will be converted to CRLF the next time Git touches the file. No deliberate line-ending normalization was performed.
+| ID | Severity | Finding | Disposition |
+|---|---|---|---|
+| F-P3-01 | Info | Client/Document response mapping reads the (possibly lazy) Documents collection; callers must load it intentionally. | By design per D-11/D-13; documented in mapper Javadoc. |
+| F-P3-02 | Info | Nested Client PUT/PATCH document identity matching, version checks and aggregate orchestration are intentionally left to the service layer; mappers only create new nested entities or update a supplied target. | By design per D-13. |
+| F-P3-03 | Info | Multiple method-name aliases were added to ease future caller/test usage. | Accepted; no behavior change. |
+
+No Critical or Major findings.
 
 ## 10. Decisions and reasoning
 
-1. **VERIFIED:** Added a dedicated Phase 2 boundary subsection to state D-11 once comprehensively, then aligned the Developer instructions for T2.1–T2.4 to make the responsibilities actionable at the relevant tasks.
-2. **VERIFIED:** Explicitly retained the existing relationship-consistency helpers as permissible entity behavior, consistent with D-11 and the Architect's T2.2 report.
-3. **VERIFIED:** Clarified conditional use of Client/Document services to prevent placeholder or pass-through abstractions while keeping service responsibilities for actual workflows.
-4. **VERIFIED:** Preserved existing API endpoint declarations and acceptance criteria; the edits clarify architecture, rather than revising API behavior or moving already-approved requirements.
-5. **VERIFIED:** Did not change source code or tests, decision/requirements files, agent instructions, T2.1 reports or the Architect report, as prohibited by the task.
+1. Mappers are stateless utility classes (`final`, private constructor) using static methods, matching "straightforward Java code, no MapStruct".
+2. Update methods take `(request, managedTarget)` so object identity and JPA persistence-context identity are preserved; targets are never replaced.
+3. Generated `id`, `@Version` and `client` ownership are never copied from requests.
+4. `PatchValue` states are handled explicitly: `ABSENT` preserves, `PRESENT_VALUE` applies, `PRESENT_NULL` clears optional `description` only.
+5. Nested documents are assembled in memory for create (`Client.addDocument`); PUT/PATCH nested orchestration remains in the service layer per D-13.
 
 ## 11. Final status
 
-**VERIFIED — COMPLETE (DOCUMENTATION CHANGE).** The approved D-11 architecture clarifications are incorporated into `implementation-plan.md`, and this Developer report has been created. No implementation tests were run because no code or tests were changed. This report does not claim phase completion, application acceptance, or any additional Tech Lead approval.
+**PART 3 — COMPLETE WITHIN ITS SCOPE, PENDING INDEPENDENT TESTER AND REVIEWER VERIFICATION AND HUMAN TECH LEAD ACCEPTANCE.**
+
+- `.\mvnw.cmd -B -q clean test` — 244 run, 0 failed, 0 errors, 0 skipped, `BUILD SUCCESS`.
 
 ## 12. Outstanding issues
 
-1. **PENDING VERIFICATION:** The plan change has not received a separate independent Tester verification or Reviewer audit in this execution.
-2. **PENDING VERIFICATION:** The provenance and disposition of `bash.exe.stackdump` and `hs_err_pid6852.log`, and the status of the modified `agent-reports/decisions.md` relative to the initial worktree, require checking against a captured baseline if relevant.
-3. **VERIFIED:** No source-code, test, API endpoint or acceptance-criteria changes are outstanding within this task's authorized scope.
+1. Independent Tester verification and Reviewer audit of Part 3 are not yet performed (NOT AVAILABLE).
+2. HTTP-level binding of PATCH through Spring MVC remains PENDING VERIFICATION (no controllers in T2.2).
+3. No Git staging/commit/push performed (authorization not granted).
+4. T2.2 acceptance is not claimed.
 
 ## 13. Handoff to next agent
 
-- **VERIFIED:** `implementation-plan.md` now explicitly carries the D-11 constraints for upcoming T2.2, T2.3 and T2.4 work.
-- **PENDING VERIFICATION:** The Tester/Reviewer may independently verify the documentation-only change under their authorized process.
-- **VERIFIED:** Do not infer from this plan edit that Java implementation has started or that T2.2/T2.3/T2.4 is complete or accepted; those decisions remain governed by the Tech Lead approval workflow.
+**Tester (independent, before reading this report):** Run `.\mvnw.cmd -B -q clean test`; inspect `src/main/java/com/humanit/challenge/mapper/*` and verify create/response mapping, PUT scalar updates without identity/version change, PATCH omitted preservation, PATCH supplied updates, and `description: null` clearing. Confirm no repository/lazy-loading calls in update methods.
+
+**Reviewer (independent audit first):** Audit the two new mapper classes for D-11 compliance (no repositories, no transactions, no ownership/version mutation, no aggregate orchestration), lazy-loading safety, and correctness of the tri-state handling. Then read reports.
+
+**Tech Lead:** Part 3 is implemented and tests pass; authorization for any Git mutation or T2.2 acceptance remains pending.
 
 ---
-**Report status:** Written for `T2.2-EXEC-002-DEV-01`. Primary report path: `agent-reports/T2.2/developer-report.md`.
+**Report status:** Written for `T2.2-EXEC-013-DEV-03`. Previous primary archived unchanged at `agent-reports/T2.2/history/developer-004.md`.
+**Outstanding findings:** F-P3-01..F-P3-03 (Info); Tester/Reviewer NOT AVAILABLE; Git mutation not authorized.
