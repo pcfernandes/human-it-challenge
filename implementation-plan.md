@@ -307,6 +307,23 @@ Implement the complete Client and Document domain behavior, including CRUD, vali
   - Page size above 100 returns HTTP 400.
   - Ordering is deterministic by ID ascending.
 
+#### T2.9 — Optimize Client Listing — Fix N+1
+
+- **Status:** COMPLETED (accepted by the Tech Lead; PostgreSQL verification deferred).
+- **In scope:** Reduce SQL query growth for paginated `GET /api/clients` while preserving existing REST, DTO, Client ordering and pagination behavior.
+- **Implementation:** Keep the existing pageable `ClientRepository.findAll(pageable)` query. Collect IDs from the returned page, then fetch its Documents with one bulk `IN` query. Group Documents by owning Client ID and map each Client response with an explicit Document list. Skip the Documents query when the Client page is empty. Keep the existing `ClientMapper.toResponse(Client)` path for other CRUD operations.
+- **Exclusions:** No `@BatchSize`, collection `JOIN FETCH` on the pageable Client query, schema changes, DTO/API changes or unrelated endpoint optimization.
+- **Acceptance criteria:**
+  - Non-empty Client listing requests for page sizes 1, 5, 20 and 100 execute no more than 3 SQL statements each, with exactly one bulk Documents query per page and no per-Client Document loads.
+  - Empty/out-of-range pages issue no bulk Documents query and retain the existing response envelope and pagination metadata.
+  - Responses preserve Client ID-ascending ordering, requested page boundaries and page metadata, and contain the complete, correctly owned nested Document values in compatible order.
+  - Regression tests cover non-empty sizes 1/5/20/100, empty pages, response content, ordering and pagination; focused and full Maven test suites pass.
+  - Existing CRUD mapping behavior remains unchanged; no `@BatchSize`, collection fetch join or schema change is introduced.
+- **Developer:** Implement the two-step page-then-bulk-fetch flow in the service/repository boundary and explicit-list mapping path; record actual query counts and test results.
+- **Tester:** Independently verify query behavior and response/pagination contracts.
+- **Reviewer:** Independently audit the implementation and approved design boundaries.
+- **Verification note:** PostgreSQL verification is deferred by the Tech Lead decision recorded for T2.9; the reported H2 acceptance tests passed.
+
 ### Phase 2 exit criteria
 
 - Full Client and Document CRUD works.
