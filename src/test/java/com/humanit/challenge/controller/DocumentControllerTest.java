@@ -1,0 +1,189 @@
+package com.humanit.challenge.controller;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.humanit.challenge.dto.document.DocumentCreateRequest;
+import com.humanit.challenge.dto.document.DocumentPatchRequest;
+import com.humanit.challenge.dto.document.DocumentPutRequest;
+import com.humanit.challenge.dto.document.DocumentResponse;
+import com.humanit.challenge.exception.GlobalExceptionHandler;
+import com.humanit.challenge.service.DocumentService;
+
+@WebMvcTest(DocumentController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@Import(GlobalExceptionHandler.class)
+class DocumentControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private DocumentService documentService;
+
+    @Test
+    void postDocumentReturnsCreated() throws Exception {
+        when(documentService.create(eq(7L), eq(3L), any(DocumentCreateRequest.class)))
+                .thenReturn(response(12L, 7L, 0L));
+
+        mockMvc.perform(post("/api/clients/7/documents")
+                        .header("X-Client-Version", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"number":"DOC-12","description":"Passport","expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(12))
+                .andExpect(jsonPath("$.clientId").value(7));
+        verify(documentService).create(eq(7L), eq(3L), any(DocumentCreateRequest.class));
+    }
+
+    @Test
+    void listAndGetDocumentAreScopedToClient() throws Exception {
+        DocumentResponse document = response(12L, 7L, 0L);
+        when(documentService.list(eq(7L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(document)));
+        when(documentService.getById(7L, 12L)).thenReturn(document);
+
+        mockMvc.perform(get("/api/clients/7/documents"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(12))
+                .andExpect(jsonPath("$.content[0].clientId").value(7));
+        mockMvc.perform(get("/api/clients/7/documents/12"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(12))
+                .andExpect(jsonPath("$.clientId").value(7));
+
+        verify(documentService).list(eq(7L), any(Pageable.class));
+        verify(documentService).getById(7L, 12L);
+    }
+
+    @Test
+    void putAndPatchDelegateExpectedVersionsAndRequests() throws Exception {
+        when(documentService.update(eq(7L), eq(12L), eq(3L), any(DocumentPutRequest.class)))
+                .thenReturn(response(12L, 7L, 1L));
+        when(documentService.patch(eq(7L), eq(12L), eq(3L), any(DocumentPatchRequest.class)))
+                .thenReturn(response(12L, 7L, 2L));
+
+        mockMvc.perform(put("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version":0,"number":"DOC-12","description":"Passport",
+                                 "expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(1));
+        mockMvc.perform(patch("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version":1,"description":null}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(2));
+
+        verify(documentService).update(eq(7L), eq(12L), eq(3L), any(DocumentPutRequest.class));
+        verify(documentService).patch(eq(7L), eq(12L), eq(3L), any(DocumentPatchRequest.class));
+    }
+
+    @Test
+    void deleteDocumentReturnsNoContentAndPassesBothVersions() throws Exception {
+        mockMvc.perform(delete("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .header("X-Document-Version", "4"))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+        verify(documentService).delete(7L, 12L, 3L, 4L);
+    }
+
+    @Test
+    void missingAndNegativeVersionInputsReturnBadRequest() throws Exception {
+        mockMvc.perform(post("/api/clients/7/documents")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"number":"DOC-12","expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+
+        mockMvc.perform(put("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version":-1,"number":"DOC-12","expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+
+        verifyNoInteractions(documentService);
+    }
+
+    @Test
+    void negativeClientVersionReturnsBadRequestProblemDetails() throws Exception {
+        when(documentService.create(eq(7L), eq(-1L), any(DocumentCreateRequest.class)))
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Client version must not be negative"));
+
+        mockMvc.perform(post("/api/clients/7/documents")
+                        .header("X-Client-Version", "-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"number":"DOC-12","expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400));
+        verify(documentService).create(eq(7L), eq(-1L), any(DocumentCreateRequest.class));
+    }
+
+    @Test
+    void serviceNotFoundAndConflictErrorsRemainProblemDetails() throws Exception {
+        when(documentService.getById(7L, 99L))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
+        doThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Document number already in use"))
+                .when(documentService).delete(7L, 12L, 3L, 4L);
+
+        mockMvc.perform(get("/api/clients/7/documents/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(404));
+        mockMvc.perform(delete("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .header("X-Document-Version", "4"))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
+    private DocumentResponse response(Long id, Long clientId, Long version) {
+        return new DocumentResponse(id, clientId, "DOC-" + id, "Passport", LocalDate.of(2030, 1, 1), version);
+    }
+}
