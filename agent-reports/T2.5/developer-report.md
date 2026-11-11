@@ -25,7 +25,7 @@
 ## 6. Files changed
 
 - **VERIFIED (authorized T2.5 changes):** `src/test/java/com/humanit/challenge/service/ClientServiceTest.java`, `src/test/java/com/humanit/challenge/service/DocumentServiceTest.java`, and `src/test/java/com/humanit/challenge/controller/ClientAggregateUpdateHttpIntegrationTest.java`.
-- **VERIFIED (reporting):** `agent-reports/T2.5/developer-report.md` (this execution report) and `agent-reports/T2.5/history/developer-002.md` (archived prior Developer primary). After the implementation commit/push, this report is being synchronized in a separate authorized report-only commit.
+- **VERIFIED (reporting):** `agent-reports/T2.5/developer-report.md` (this execution report) and `agent-reports/T2.5/history/developer-002.md` (archived prior Developer primary). A report-only synchronization commit was also pushed after the implementation commit; this final report version records its observed result.
 - **VERIFIED:** Architect, Tester, and Reviewer primary reports are present, along with `history/developer-001.md`, `history/tester-001.md`, and `history/reviewer-001.md`.
 - **VERIFIED (pre-flight):** `agent-reports/decisions.md` was modified and `agent-reports/GOV-DECISIONS-RECONSTRUCTION-001/` and `...-002/` were untracked. They were excluded and left untouched. No production-source change was reported.
 
@@ -38,7 +38,8 @@
 - **VERIFIED:** `git diff --cached --name-status` showed only 11 authorized paths; `git diff --cached --check` passed.
 - **VERIFIED:** `git commit -m "test: cover T2.5 aggregate update semantics"` — commit `c383fe2a3b450c2488337805cf3335dd080d1725`.
 - **VERIFIED:** `git push -u origin feature/T2.5-aggregate-updates` created the remote tracking branch; `git ls-remote` confirmed remote ref `refs/heads/feature/T2.5-aggregate-updates` at the same implementation commit.
-- **PENDING VERIFICATION:** This report-only follow-up commit and push are being performed to include the final outcome in the persistent Developer report.
+- **VERIFIED:** `git commit -m "docs: record T2.5 push execution"` — report-only commit `b975089dd55dcd56abbfebdda2dc89844a5152de`.
+- **VERIFIED:** `git push origin feature/T2.5-aggregate-updates` advanced the remote branch to the report-only commit; `git ls-remote` confirmed the final remote SHA.
 
 ## 8. Evidence and observed results
 
@@ -51,7 +52,8 @@
 - **VERIFIED:** Implementation commit SHA: `c383fe2a3b450c2488337805cf3335dd080d1725`; remote branch ref was observed at the same SHA after push.
 - **VERIFIED** (post-push `git status --short`): Only excluded, pending changes remain: modified `agent-reports/decisions.md` and untracked `agent-reports/GOV-DECISIONS-RECONSTRUCTION-001/` and `agent-reports/GOV-DECISIONS-RECONSTRUCTION-002/`.
 - **VERIFIED:** GitHub offered PR creation URL `https://github.com/pcfernandes/human-it-challenge/pull/new/feature/T2.5-aggregate-updates`; no PR was created.
-- **PENDING VERIFICATION:** The report-only follow-up commit and push remain to be completed.
+- **VERIFIED:** Post-report-push `git rev-parse HEAD` and `git ls-remote origin refs/heads/feature/T2.5-aggregate-updates` both returned `b975089dd55dcd56abbfebdda2dc89844a5152de`.
+- **VERIFIED:** Post-push `git status --short` showed only the excluded decision-log modification and the two excluded untracked reconstruction directories; no staged changes remained.
 
 ## 9. Findings and severity
 
@@ -68,18 +70,18 @@
 
 ## 11. Final status
 
-**VERIFIED — IMPLEMENTATION COMMITTED AND PUSHED; REPORT SYNCHRONIZATION PENDING.** Required tests passed; the authorized implementation commit was pushed to the target feature branch. This status is not T2.5 acceptance.
+**VERIFIED — T2.5 IMPLEMENTATION COMMITTED AND PUSHED; EXECUTION REPORT SYNCHRONIZED.** Required tests passed; the authorized implementation commit and the follow-up report-only commit were pushed to the target feature branch. Excluded pending changes remain untouched. This status is not T2.5 acceptance.
 
 ## 12. Outstanding issues
 
-1. **PENDING VERIFICATION:** Finish and verify the separate report-only synchronization commit/push.
-2. **VERIFIED:** Implementation commit SHA is `c383fe2a3b450c2488337805cf3335dd080d1725`; remote feature ref was checked and matched it at post-push verification.
+1. **VERIFIED:** Implementation commit SHA is `c383fe2a3b450c2488337805cf3335dd080d1725`; remote feature ref was checked and matched it after the implementation push.
+2. **VERIFIED:** Report-only synchronization commit `b975089dd55dcd56abbfebdda2dc89844a5152de` is also on the target branch.
 3. **VERIFIED:** Excluded pending work remains in the decision log and the two reconstruction directories; it must remain uncommitted.
-4. **PENDING APPROVAL:** Human Tech Lead retains final acceptance authority.
+4. **PENDING APPROVAL:** Human Tech Lead retains final T2.5 acceptance authority.
 
 ## 13. Handoff to next agent
 
 - **VERIFIED:** Completed the authorized implementation commit and push; `https://github.com/pcfernandes/human-it-challenge/pull/new/feature/T2.5-aggregate-updates` is the provided PR creation URL, but no PR was created.
-- **PENDING VERIFICATION:** Complete report synchronization and verify the final worktree state.
+- **VERIFIED:** Final remote SHA and worktree status were checked after the report-only push; no PR was created and no merge was performed.
 - **VERIFIED:** No merge or PR creation is authorized in this execution.
 - **PENDING APPROVAL:** Human Tech Lead retains final acceptance authority; no acceptance is claimed.
