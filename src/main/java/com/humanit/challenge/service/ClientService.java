@@ -70,12 +70,14 @@ public class ClientService {
     @Transactional
     public ClientResponse update(Long id, ClientPutRequest request) {
         Objects.requireNonNull(request, "request must not be null");
-        Client client = loadClient(id);
+        validateExpectedVersion(request.getVersion(), "Client");
+        boolean nestedDocumentsSupplied = request.getDocuments() != null && !request.getDocuments().isEmpty();
+        Client client = loadClient(id, nestedDocumentsSupplied);
         enforceVersion(client, request.getVersion());
         ensureTaxIdentifierAvailable(request.getTaxIdentifier(), client.getId());
         ClientMapper.updateFromPut(request, client);
-        applyPutDocuments(client, request.getDocuments());
         try {
+            applyPutDocuments(client, request.getDocuments());
             Client saved = clientRepository.saveAndFlush(client);
             return ClientMapper.toResponse(saved);
         } catch (DataIntegrityViolationException | ObjectOptimisticLockingFailureException ex) {
@@ -86,13 +88,16 @@ public class ClientService {
     @Transactional
     public ClientResponse patch(Long id, ClientPatchRequest request) {
         Objects.requireNonNull(request, "request must not be null");
-        Client client = loadClient(id);
+        validateExpectedVersion(request.getVersion(), "Client");
+        PatchValue<List<com.humanit.challenge.dto.client.ClientDocumentPatchRequest>> docs = request.getDocuments();
+        boolean nestedDocumentsSupplied = docs.isPresentValue() && docs.get() != null
+                && docs.get().stream().anyMatch(this::hasNestedPatchValues);
+        Client client = loadClient(id, nestedDocumentsSupplied);
         enforceVersion(client, request.getVersion());
         if (request.getTaxIdentifier().isPresentValue()) {
             ensureTaxIdentifierAvailable(request.getTaxIdentifier().get(), client.getId());
         }
         ClientMapper.updateFromPatch(request, client);
-        PatchValue<List<com.humanit.challenge.dto.client.ClientDocumentPatchRequest>> docs = request.getDocuments();
         if (docs.isPresentValue()) {
             List<com.humanit.challenge.dto.client.ClientDocumentPatchRequest> supplied = docs.get();
             if (supplied != null && !supplied.isEmpty()) {
@@ -108,8 +113,10 @@ public class ClientService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(Long id, Long expectedVersion) {
+        validateExpectedVersion(expectedVersion, "Client");
         Client client = loadClient(id);
+        enforceVersion(client, expectedVersion);
         try {
             clientRepository.delete(client);
             clientRepository.flush();
@@ -126,8 +133,25 @@ public class ClientService {
     }
 
     private void enforceVersion(Client client, Long expectedVersion) {
-        if (expectedVersion == null || !expectedVersion.equals(client.getVersion())) {
+        if (!expectedVersion.equals(client.getVersion())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Version conflict");
+        }
+    }
+
+    private Client loadClient(Long id, boolean forceIncrement) {
+        if (!forceIncrement) {
+            return loadClient(id);
+        }
+        return clientRepository.lockById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
+    }
+
+    private void validateExpectedVersion(Long expectedVersion, String resource) {
+        if (expectedVersion == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, resource + " version is required");
+        }
+        if (expectedVersion < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, resource + " version must not be negative");
         }
     }
 
@@ -195,6 +219,13 @@ public class ClientService {
                 DocumentMapper.updateFromPatch(docRequest, existing);
             }
         }
+    }
+
+    private boolean hasNestedPatchValues(ClientDocumentPatchRequest request) {
+        return request.getId() == null
+                || request.getNumber().isPresentValue() || request.getNumber().isPresentNull()
+                || request.getDescription().isPresentValue() || request.getDescription().isPresentNull()
+                || request.getExpirationDate().isPresentValue() || request.getExpirationDate().isPresentNull();
     }
 
     private void ensureDocumentNumberAvailable(String number, Long currentDocumentId) {

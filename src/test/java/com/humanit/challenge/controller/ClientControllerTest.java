@@ -106,10 +106,24 @@ class ClientControllerTest {
 
     @Test
     void deleteClientReturnsNoContent() throws Exception {
-        mockMvc.perform(delete("/api/clients/42"))
+        mockMvc.perform(delete("/api/clients/42").header("X-Client-Version", "0"))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
-        verify(clientService).delete(42L);
+        verify(clientService).delete(42L, 0L);
+    }
+
+    @Test
+    void deleteClientRequiresWellFormedVersionHeader() throws Exception {
+        mockMvc.perform(delete("/api/clients/42"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400));
+
+        mockMvc.perform(delete("/api/clients/42").header("X-Client-Version", "not-a-version"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400));
+        verifyNoInteractions(clientService);
     }
 
     @Test
@@ -123,6 +137,37 @@ class ClientControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.status").value(400));
+        verifyNoInteractions(clientService);
+    }
+
+    @Test
+    void malformedClientUpdateVersionsReturnBadRequestProblemDetails() throws Exception {
+        mockMvc.perform(put("/api/clients/42")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"firstName":"Ada","lastName":"Lovelace","taxIdentifier":"TAX-42",
+                                 "email":"ada@example.com","phoneNumber":"123"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        mockMvc.perform(patch("/api/clients/42")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":\"Grace\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        mockMvc.perform(put("/api/clients/42")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"firstName":"Ada","lastName":"Lovelace","taxIdentifier":"TAX-42",
+                                 "email":"ada@example.com","phoneNumber":"123","version":"bad"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        mockMvc.perform(patch("/api/clients/42")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":\"bad\",\"firstName\":\"Grace\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
         verifyNoInteractions(clientService);
     }
 

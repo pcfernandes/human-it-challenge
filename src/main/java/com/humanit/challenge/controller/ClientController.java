@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.humanit.challenge.dto.client.ClientCreateRequest;
@@ -49,17 +50,29 @@ public class ClientController {
 
     @PutMapping("/{id}")
     public ClientResponse update(@PathVariable Long id, @Valid @RequestBody ClientPutRequest request) {
-        return clientService.update(id, request);
+        ClientResponse updated = clientService.update(id, request);
+        if (request.getDocuments() != null && !request.getDocuments().isEmpty()) {
+            // JPA may apply OPTIMISTIC_FORCE_INCREMENT at transaction completion.
+            return clientService.getById(id);
+        }
+        return updated;
     }
 
     @PatchMapping("/{id}")
     public ClientResponse patch(@PathVariable Long id, @Valid @RequestBody ClientPatchRequest request) {
-        return clientService.patch(id, request);
+        ClientResponse updated = clientService.patch(id, request);
+        if (request.getDocuments().isPresentValue() && request.getDocuments().get() != null
+                && !request.getDocuments().get().isEmpty()) {
+            return clientService.getById(id);
+        }
+        return updated;
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        clientService.delete(id);
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @RequestHeader("X-Client-Version") Long expectedClientVersion) {
+        clientService.delete(id, expectedClientVersion);
         return ResponseEntity.noContent().build();
     }
 }

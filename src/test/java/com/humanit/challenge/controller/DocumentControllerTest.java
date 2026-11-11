@@ -148,6 +148,69 @@ class DocumentControllerTest {
     }
 
     @Test
+    void requiredDocumentVersionHeadersRejectMissingAndMalformedValues() throws Exception {
+        mockMvc.perform(post("/api/clients/7/documents")
+                        .header("X-Client-Version", "not-a-version")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"number":"DOC-12","expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        mockMvc.perform(put("/api/clients/7/documents/12")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version":0,"number":"DOC-12","expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(put("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"number":"DOC-12","expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(patch("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/clients/7/documents/12"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/clients/7/documents/12").header("X-Client-Version", "3"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "not-a-version")
+                        .header("X-Document-Version", "4"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .header("X-Document-Version", "not-a-version"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(documentService);
+    }
+
+    @Test
+    void malformedDocumentBodyVersionsReturnBadRequest() throws Exception {
+        mockMvc.perform(put("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version":"bad","number":"DOC-12","expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        mockMvc.perform(patch("/api/clients/7/documents/12")
+                        .header("X-Client-Version", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":\"bad\",\"description\":\"updated\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        verifyNoInteractions(documentService);
+    }
+
+    @Test
     void negativeClientVersionReturnsBadRequestProblemDetails() throws Exception {
         when(documentService.create(eq(7L), eq(-1L), any(DocumentCreateRequest.class)))
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Client version must not be negative"));
