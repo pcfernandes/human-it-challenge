@@ -49,7 +49,13 @@ public final class ClientMapper {
 
     public static ClientResponse toResponse(Client client) {
         Objects.requireNonNull(client, "client must not be null");
-        List<DocumentResponse> documents = client.getDocuments().stream()
+        return toResponse(client, client.getDocuments());
+    }
+
+    public static ClientResponse toResponse(Client client, List<Document> documents) {
+        Objects.requireNonNull(client, "client must not be null");
+        Objects.requireNonNull(documents, "documents must not be null");
+        List<DocumentResponse> documentResponses = documents.stream()
                 .map(DocumentMapper::toResponse)
                 .toList();
         return new ClientResponse(
@@ -60,7 +66,7 @@ public final class ClientMapper {
                 client.getEmail(),
                 client.getPhoneNumber(),
                 client.getVersion(),
-                documents);
+                documentResponses);
     }
 
     // ------------------------------------------------------------------ put

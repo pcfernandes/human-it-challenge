@@ -1,7 +1,9 @@
 package com.humanit.challenge.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -64,7 +66,18 @@ public class ClientService {
 
     @Transactional(readOnly = true)
     public Page<ClientResponse> list(Pageable pageable) {
-        return clientRepository.findAll(pageable).map(ClientMapper::toResponse);
+        Page<Client> clients = clientRepository.findAll(pageable);
+        if (clients.isEmpty()) {
+            return clients.map(client -> ClientMapper.toResponse(client, List.of()));
+        }
+
+        List<Long> clientIds = clients.getContent().stream().map(Client::getId).toList();
+        Map<Long, List<Document>> documentsByClientId = documentRepository
+                .findByClient_IdInOrderByIdAsc(clientIds).stream()
+                .collect(Collectors.groupingBy(document -> document.getClient().getId()));
+
+        return clients.map(client -> ClientMapper.toResponse(
+                client, documentsByClientId.getOrDefault(client.getId(), List.of())));
     }
 
     @Transactional
