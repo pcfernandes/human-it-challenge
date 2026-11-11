@@ -99,10 +99,11 @@ public class DocumentService {
 
     @Transactional
     public void delete(Long clientId, Long documentId, Long expectedClientVersion, Long expectedDocumentVersion) {
-        lockClient(clientId, expectedClientVersion);
+        Client client = lockClient(clientId, expectedClientVersion);
         Document document = loadDocument(clientId, documentId);
         enforceDocumentVersion(document, expectedDocumentVersion);
         try {
+            client.removeDocument(document);
             documentRepository.delete(document);
             documentRepository.flush();
             clientRepository.flush();

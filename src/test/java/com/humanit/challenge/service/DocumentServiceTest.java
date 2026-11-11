@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.persistence.EntityManager;
+
 import com.humanit.challenge.domain.Client;
 import com.humanit.challenge.dto.client.ClientDocumentPatchRequest;
 import com.humanit.challenge.dto.client.ClientDocumentPutRequest;
@@ -53,6 +55,9 @@ class DocumentServiceTest {
 
     @Autowired
     private DocumentRepository documentRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     void createAndRetrieve() {
@@ -187,11 +192,17 @@ class DocumentServiceTest {
         Long clientVersion = currentClientVersion(client.getId());
         var retained = documentService.create(client.getId(), clientVersion,
                 new DocumentCreateRequest("DOC-RETAIN", null, LocalDate.of(2028, 1, 1)));
+        Long versionBeforeDelete = currentClientVersion(client.getId());
 
-        documentService.delete(client.getId(), first.id(), currentClientVersion(client.getId()), first.version());
+        documentService.delete(client.getId(), first.id(), versionBeforeDelete, first.version());
 
         assertThat(documentRepository.existsById(first.id())).isFalse();
         assertThat(documentRepository.existsById(retained.id())).isTrue();
+        entityManager.clear();
+        Client reloadedClient = reloadClientWithDocuments(client.getId());
+        assertThat(reloadedClient.getDocuments()).extracting(document -> document.getId())
+                .containsExactly(retained.id());
+        assertThat(reloadedClient.getVersion()).isEqualTo(versionBeforeDelete + 1);
     }
 
     @Test
@@ -248,6 +259,9 @@ class DocumentServiceTest {
         Client client = createClient();
         var document = documentService.create(client.getId(), client.getVersion(),
                 new DocumentCreateRequest("DOC-DELETE-STALE", null, LocalDate.of(2028, 1, 1)));
+        Long documentClientVersion = currentClientVersion(client.getId());
+        var sibling = documentService.create(client.getId(), documentClientVersion,
+                new DocumentCreateRequest("DOC-DELETE-STALE-SIBLING", null, LocalDate.of(2028, 1, 1)));
         Long currentClientVersion = currentClientVersion(client.getId());
 
         assertStatus(HttpStatus.CONFLICT,
@@ -257,7 +271,13 @@ class DocumentServiceTest {
                 () -> documentService.delete(client.getId(), document.id(), currentClientVersion,
                         document.version() + 1));
 
+        entityManager.clear();
+        Client reloadedClient = reloadClientWithDocuments(client.getId());
+        assertThat(reloadedClient.getVersion()).isEqualTo(currentClientVersion);
         assertThat(documentRepository.existsById(document.id())).isTrue();
+        assertThat(documentRepository.existsById(sibling.id())).isTrue();
+        assertThat(reloadedClient.getDocuments()).extracting(documentEntity -> documentEntity.getId())
+                .containsExactlyInAnyOrder(document.id(), sibling.id());
     }
 
     @ParameterizedTest
@@ -294,6 +314,14 @@ class DocumentServiceTest {
 
     private Long currentClientVersion(Long clientId) {
         return clientRepository.findById(clientId).orElseThrow().getVersion();
+    }
+
+    private Client reloadClientWithDocuments(Long clientId) {
+        return entityManager.createQuery(
+                        "select distinct client from Client client left join fetch client.documents where client.id = :id",
+                        Client.class)
+                .setParameter("id", clientId)
+                .getSingleResult();
     }
 
     private ClientPutRequest clientPutRequest(Client client, Long version) {

@@ -118,6 +118,32 @@ class ClientAggregateUpdateHttpIntegrationTest {
     }
 
     @Test
+    void postWithDuplicateNestedDocumentNumbersRollsBackClientAndDocuments() throws Exception {
+        String duplicateNumber = "DOC-POST-DUPLICATE-ROLLBACK";
+        String taxIdentifier = "TAX-POST-DUPLICATE-ROLLBACK";
+
+        mockMvc.perform(post("/api/clients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"firstName":"Ada","lastName":"Lovelace","taxIdentifier":"%s",
+                                 "email":"post-duplicate-rollback@example.com","phoneNumber":"123",
+                                 "documents":[
+                                   {"number":"%s","description":"first","expirationDate":"2030-01-01"},
+                                   {"number":"%s","description":"second","expirationDate":"2031-01-01"}
+                                 ]}
+                                """.formatted(taxIdentifier, duplicateNumber, duplicateNumber)))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Conflict"))
+                .andExpect(jsonPath("$.status").value(409));
+
+        entityManager.clear();
+        assertThat(clientRepository.findByTaxIdentifier(taxIdentifier)).isEmpty();
+        assertThat(documentRepository.findByNumber(duplicateNumber)).isEmpty();
+    }
+
+    @Test
     void nestedOnlyPutAndPatchReturnPersistedClientVersion() throws Exception {
         ClientResponse created = createClientWithDocument("TAX-RESPONSE-VERSION", "DOC-RESPONSE-VERSION");
         var originalDocument = created.documents().get(0);
@@ -224,6 +250,59 @@ class ClientAggregateUpdateHttpIntegrationTest {
         assertThat(reloadedFirst.getDescription()).isEqualTo(first.description());
         assertThat(reloadedSecond.getNumber()).isEqualTo(second.number());
         assertThat(documentRepository.findByNumber("DOC-ROLLBACK-STALE")).isEmpty();
+    }
+
+    @Test
+    void patchWithLaterStaleNestedDocumentRollsBackEarlierAggregateChanges() throws Exception {
+        ClientResponse created = createClientWithDocuments("TAX-PATCH-ROLLBACK-CONFLICT",
+                "DOC-PATCH-ROLLBACK-FIRST", "DOC-PATCH-ROLLBACK-SECOND");
+        var first = created.documents().get(0);
+        var second = created.documents().get(1);
+        String request = """
+                {
+                  "firstName":"Changed but rolled back",
+                  "lastName":"%s","taxIdentifier":"%s","email":"%s","phoneNumber":"%s",
+                  "version":%d,
+                  "documents":[
+                    {"id":%d,"version":%d,"number":"DOC-PATCH-ROLLBACK-UPDATED",
+                     "description":"attempted change","expirationDate":"2031-01-01"},
+                    {"id":%d,"version":%d,"number":"DOC-PATCH-ROLLBACK-STALE",
+                     "description":"stale change","expirationDate":"2032-01-01"}
+                  ]
+                }
+                """.formatted(created.lastName(), created.taxIdentifier(), created.email(), created.phoneNumber(),
+                created.version(), first.id(), first.version(), second.id(), second.version() + 1);
+
+        mockMvc.perform(patch("/api/clients/{id}", created.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Conflict"))
+                .andExpect(jsonPath("$.status").value(409));
+
+        entityManager.clear();
+        var reloadedClient = clientRepository.findById(created.id()).orElseThrow();
+        assertThat(reloadedClient.getFirstName()).isEqualTo(created.firstName());
+        assertThat(reloadedClient.getLastName()).isEqualTo(created.lastName());
+        assertThat(reloadedClient.getTaxIdentifier()).isEqualTo(created.taxIdentifier());
+        assertThat(reloadedClient.getEmail()).isEqualTo(created.email());
+        assertThat(reloadedClient.getPhoneNumber()).isEqualTo(created.phoneNumber());
+        assertThat(reloadedClient.getVersion()).isEqualTo(created.version());
+
+        var reloadedFirst = documentRepository.findById(first.id()).orElseThrow();
+        var reloadedSecond = documentRepository.findById(second.id()).orElseThrow();
+        assertThat(reloadedFirst.getNumber()).isEqualTo(first.number());
+        assertThat(reloadedFirst.getDescription()).isEqualTo(first.description());
+        assertThat(reloadedFirst.getExpirationDate()).isEqualTo(first.expirationDate());
+        assertThat(reloadedFirst.getVersion()).isEqualTo(first.version());
+        assertThat(reloadedSecond.getNumber()).isEqualTo(second.number());
+        assertThat(reloadedSecond.getDescription()).isEqualTo(second.description());
+        assertThat(reloadedSecond.getExpirationDate()).isEqualTo(second.expirationDate());
+        assertThat(reloadedSecond.getVersion()).isEqualTo(second.version());
+        assertThat(documentRepository.findByNumber("DOC-PATCH-ROLLBACK-UPDATED")).isEmpty();
+        assertThat(documentRepository.findByNumber("DOC-PATCH-ROLLBACK-STALE")).isEmpty();
     }
 
     private ClientResponse createClientWithDocument(String taxIdentifier, String documentNumber) {
