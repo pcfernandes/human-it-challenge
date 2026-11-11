@@ -15,6 +15,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -124,6 +126,32 @@ class ClientServiceTest {
         assertThatThrownBy(() -> clientService.update(created.id(), put))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
+    }
+
+    @Test
+    void listReturnsOrderedPageMetadataAndEmptyBoundaries() {
+        assertThat(clientService.list(PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "id"))).getTotalElements())
+                .isZero();
+
+        ClientResponse first = clientService.create(clientCreateRequest("TAX-PAGE-1"));
+        ClientResponse second = clientService.create(clientCreateRequest("TAX-PAGE-2"));
+        ClientResponse third = clientService.create(clientCreateRequest("TAX-PAGE-3"));
+
+        var firstPage = clientService.list(PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "id")));
+        assertThat(firstPage.getContent()).extracting(ClientResponse::id).containsExactly(first.id(), second.id());
+        assertThat(firstPage.getContent().get(0).firstName()).isEqualTo("Ada");
+        assertThat(firstPage.getContent().get(0).taxIdentifier()).isEqualTo("TAX-PAGE-1");
+        assertThat(firstPage.getNumber()).isZero();
+        assertThat(firstPage.getSize()).isEqualTo(2);
+        assertThat(firstPage.getTotalElements()).isEqualTo(3);
+        assertThat(firstPage.getTotalPages()).isEqualTo(2);
+
+        var secondPage = clientService.list(PageRequest.of(1, 2, Sort.by(Sort.Direction.ASC, "id")));
+        assertThat(secondPage.getContent()).extracting(ClientResponse::id).containsExactly(third.id());
+        var outOfRange = clientService.list(PageRequest.of(5, 2, Sort.by(Sort.Direction.ASC, "id")));
+        assertThat(outOfRange.getContent()).isEmpty();
+        assertThat(outOfRange.getTotalElements()).isEqualTo(3);
+        assertThat(outOfRange.getTotalPages()).isEqualTo(2);
     }
 
     @Test

@@ -77,17 +77,35 @@ class DocumentServiceTest {
     void listIsScopedToClientAndReturnsPage() {
         Client client = createClient();
         Client otherClient = createClient();
-        documentService.create(client.getId(), client.getVersion(),
+        var first = documentService.create(client.getId(), client.getVersion(),
                 new DocumentCreateRequest("DOC-LIST-1", null, LocalDate.of(2028, 1, 1)));
+        documentService.create(client.getId(), currentClientVersion(client.getId()),
+                new DocumentCreateRequest("DOC-LIST-3", null, LocalDate.of(2028, 1, 1)));
         documentService.create(otherClient.getId(), otherClient.getVersion(),
                 new DocumentCreateRequest("DOC-LIST-2", null, LocalDate.of(2028, 1, 1)));
 
         var page = documentService.list(client.getId(),
-                PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "id")));
+                PageRequest.of(0, 1, Sort.by(Sort.Direction.ASC, "id")));
 
         assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().get(0).clientId()).isEqualTo(client.getId());
         assertThat(page.getContent().get(0).number()).isEqualTo("DOC-LIST-1");
+        assertThat(page.getContent().get(0).id()).isEqualTo(first.id());
+        assertThat(page.getPageable().getSort()).isEqualTo(Sort.by(Sort.Direction.ASC, "id"));
+        assertThat(page.getTotalElements()).isEqualTo(2);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+
+        var outOfRange = documentService.list(client.getId(),
+                PageRequest.of(5, 1, Sort.by(Sort.Direction.ASC, "id")));
+        assertThat(outOfRange.getContent()).isEmpty();
+        assertThat(outOfRange.getTotalElements()).isEqualTo(2);
+        assertThat(outOfRange.getTotalPages()).isEqualTo(2);
+
+        Client emptyClient = createClient();
+        var empty = documentService.list(emptyClient.getId(), PageRequest.of(0, 20));
+        assertThat(empty.getContent()).isEmpty();
+        assertThat(empty.getTotalElements()).isZero();
+        assertThat(empty.getTotalPages()).isZero();
     }
 
     @Test

@@ -1,7 +1,9 @@
 package com.humanit.challenge.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,12 +15,21 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+import com.humanit.challenge.config.AppPaginationProperties;
 import com.humanit.challenge.dto.client.ClientCreateRequest;
 import com.humanit.challenge.dto.client.ClientPatchRequest;
 import com.humanit.challenge.dto.client.ClientPutRequest;
 import com.humanit.challenge.dto.client.ClientResponse;
+import com.humanit.challenge.dto.common.PageResponse;
 import com.humanit.challenge.service.ClientService;
 
 import jakarta.validation.Valid;
@@ -28,9 +39,11 @@ import jakarta.validation.Valid;
 public class ClientController {
 
     private final ClientService clientService;
+    private final AppPaginationProperties paginationProperties;
 
-    public ClientController(ClientService clientService) {
+    public ClientController(ClientService clientService, AppPaginationProperties paginationProperties) {
         this.clientService = clientService;
+        this.paginationProperties = paginationProperties;
     }
 
     @PostMapping
@@ -44,8 +57,27 @@ public class ClientController {
     }
 
     @GetMapping
-    public List<ClientResponse> list() {
-        return clientService.list();
+    @Operation(summary = "List clients", description = "Returns a page ordered by client ID ascending. "
+            + "Defaults to page 0 and size 20; size is limited to 100. Invalid pagination returns HTTP 400.")
+    @ApiResponse(responseCode = "200", description = "Paginated client collection")
+    @ApiResponse(responseCode = "400", description = "Invalid page or size (Problem Details)")
+    public PageResponse<ClientResponse> list(
+            @Parameter(description = "Zero-based page index", schema = @Schema(type = "integer", defaultValue = "0", minimum = "0"))
+            @RequestParam(name = "page", required = false) Integer page,
+            @Parameter(description = "Page size (1–100)", schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"))
+            @RequestParam(name = "size", required = false) Integer size) {
+        Pageable pageable = paginationRequest(page, size);
+        Page<ClientResponse> result = clientService.list(pageable);
+        return PageResponse.from(result);
+    }
+
+    private Pageable paginationRequest(Integer page, Integer size) {
+        int resolvedPage = page == null ? paginationProperties.defaultPage() : page;
+        int resolvedSize = size == null ? paginationProperties.defaultPageSize() : size;
+        if (resolvedPage < 0 || resolvedSize < 1 || resolvedSize > paginationProperties.maxPageSize()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid page or size");
+        }
+        return PageRequest.of(resolvedPage, resolvedSize, Sort.by(Sort.Direction.ASC, "id"));
     }
 
     @PutMapping("/{id}")
