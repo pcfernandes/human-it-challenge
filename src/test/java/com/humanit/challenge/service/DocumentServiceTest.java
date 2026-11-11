@@ -21,6 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.humanit.challenge.domain.Client;
+import com.humanit.challenge.dto.client.ClientDocumentPatchRequest;
+import com.humanit.challenge.dto.client.ClientDocumentPutRequest;
+import com.humanit.challenge.dto.client.ClientPatchRequest;
+import com.humanit.challenge.dto.client.ClientPutRequest;
 import com.humanit.challenge.dto.document.DocumentCreateRequest;
 import com.humanit.challenge.dto.document.DocumentPatchRequest;
 import com.humanit.challenge.dto.document.DocumentPutRequest;
@@ -32,7 +36,7 @@ import com.humanit.challenge.repository.DocumentRepository;
         "spring.jpa.hibernate.ddl-auto=validate",
         "spring.flyway.enabled=true"
 })
-@Import(DocumentService.class)
+@Import({ ClientService.class, DocumentService.class })
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class DocumentServiceTest {
 
@@ -40,6 +44,9 @@ class DocumentServiceTest {
 
     @Autowired
     private DocumentService documentService;
+
+    @Autowired
+    private ClientService clientService;
 
     @Autowired
     private ClientRepository clientRepository;
@@ -94,9 +101,82 @@ class DocumentServiceTest {
         var patched = documentService.patch(client.getId(), created.id(), versionAfterPut, patch);
 
         assertThat(updated.number()).isEqualTo("DOC-UPDATED");
+        assertThat(updated.id()).isEqualTo(created.id());
+        assertThat(updated.expirationDate()).isEqualTo(LocalDate.of(2029, 1, 1));
         assertThat(patched.description()).isNull();
+        assertThat(patched.id()).isEqualTo(created.id());
+        assertThat(patched.number()).isEqualTo(updated.number());
+        assertThat(patched.expirationDate()).isEqualTo(updated.expirationDate());
         assertThat(patched.clientId()).isEqualTo(client.getId());
         assertThat(patched.version()).isGreaterThan(updated.version());
+        assertThat(documentRepository.findById(created.id()).orElseThrow().getClient().getId())
+                .isEqualTo(client.getId());
+    }
+
+    @Test
+    void standaloneAndAggregateDocumentPutAndPatchApplyEquivalentFieldSemantics() {
+        Client client = createClient();
+        var standalone = documentService.create(client.getId(), client.getVersion(),
+                new DocumentCreateRequest("DOC-CONSISTENT-STANDALONE", "before", LocalDate.of(2028, 1, 1)));
+
+        ClientPutRequest createNested = clientPutRequest(client, currentClientVersion(client.getId()));
+        ClientDocumentPutRequest newNestedDocument = new ClientDocumentPutRequest();
+        newNestedDocument.setNumber("DOC-CONSISTENT-AGGREGATE");
+        newNestedDocument.setDescription("before");
+        newNestedDocument.setExpirationDate(LocalDate.of(2028, 1, 1));
+        createNested.setDocuments(List.of(newNestedDocument));
+        var aggregateCreated = clientService.update(client.getId(), createNested);
+        var aggregate = aggregateCreated.documents().stream()
+                .filter(document -> document.number().equals("DOC-CONSISTENT-AGGREGATE"))
+                .findFirst().orElseThrow();
+
+        var standalonePut = documentService.update(client.getId(), standalone.id(),
+                currentClientVersion(client.getId()),
+                new DocumentPutRequest(standalone.version(), "DOC-CONSISTENT-PUT-S", "put", LocalDate.of(2030, 1, 1)));
+        ClientPutRequest aggregatePutRequest = clientPutRequest(aggregateCreated, currentClientVersion(client.getId()));
+        ClientDocumentPutRequest updateNestedDocument = new ClientDocumentPutRequest();
+        updateNestedDocument.setId(aggregate.id());
+        updateNestedDocument.setVersion(aggregate.version());
+        updateNestedDocument.setNumber("DOC-CONSISTENT-PUT-A");
+        updateNestedDocument.setDescription("put");
+        updateNestedDocument.setExpirationDate(LocalDate.of(2030, 1, 1));
+        aggregatePutRequest.setDocuments(List.of(updateNestedDocument));
+        var aggregatePut = clientService.update(client.getId(), aggregatePutRequest).documents().stream()
+                .filter(document -> document.id().equals(aggregate.id())).findFirst().orElseThrow();
+
+        assertThat(standalonePut.id()).isEqualTo(standalone.id());
+        assertThat(aggregatePut.id()).isEqualTo(aggregate.id());
+        assertThat(standalonePut.clientId()).isEqualTo(client.getId());
+        assertThat(aggregatePut.clientId()).isEqualTo(client.getId());
+        assertThat(standalonePut.description()).isEqualTo(aggregatePut.description());
+        assertThat(standalonePut.expirationDate()).isEqualTo(aggregatePut.expirationDate());
+
+        DocumentPatchRequest standalonePatchRequest = new DocumentPatchRequest();
+        standalonePatchRequest.setVersion(standalonePut.version());
+        standalonePatchRequest.setNumber(PatchValue.of("DOC-CONSISTENT-PATCH-S"));
+        var standalonePatch = documentService.patch(client.getId(), standalone.id(),
+                currentClientVersion(client.getId()), standalonePatchRequest);
+
+        ClientDocumentPatchRequest aggregatePatchDocument = new ClientDocumentPatchRequest();
+        aggregatePatchDocument.setId(aggregatePut.id());
+        aggregatePatchDocument.setVersion(aggregatePut.version());
+        aggregatePatchDocument.setNumber(PatchValue.of("DOC-CONSISTENT-PATCH-A"));
+        ClientPatchRequest aggregatePatchRequest = new ClientPatchRequest();
+        aggregatePatchRequest.setVersion(currentClientVersion(client.getId()));
+        aggregatePatchRequest.setDocuments(PatchValue.of(List.of(aggregatePatchDocument)));
+        var aggregatePatch = clientService.patch(client.getId(), aggregatePatchRequest).documents().stream()
+                .filter(document -> document.id().equals(aggregate.id())).findFirst().orElseThrow();
+
+        assertThat(standalonePatch.id()).isEqualTo(standalone.id());
+        assertThat(aggregatePatch.id()).isEqualTo(aggregate.id());
+        assertThat(standalonePatch.clientId()).isEqualTo(client.getId());
+        assertThat(aggregatePatch.clientId()).isEqualTo(client.getId());
+        assertThat(standalonePatch.number()).isEqualTo("DOC-CONSISTENT-PATCH-S");
+        assertThat(aggregatePatch.number()).isEqualTo("DOC-CONSISTENT-PATCH-A");
+        assertThat(standalonePatch.description()).isEqualTo("put");
+        assertThat(aggregatePatch.description()).isEqualTo("put");
+        assertThat(standalonePatch.expirationDate()).isEqualTo(aggregatePatch.expirationDate());
+        assertThat(documentRepository.findByClientId(client.getId(), PageRequest.of(0, 20)).getContent()).hasSize(2);
     }
 
     @Test
@@ -190,6 +270,28 @@ class DocumentServiceTest {
 
     private Long currentClientVersion(Long clientId) {
         return clientRepository.findById(clientId).orElseThrow().getVersion();
+    }
+
+    private ClientPutRequest clientPutRequest(Client client, Long version) {
+        ClientPutRequest request = new ClientPutRequest();
+        request.setFirstName(client.getFirstName());
+        request.setLastName(client.getLastName());
+        request.setTaxIdentifier(client.getTaxIdentifier());
+        request.setEmail(client.getEmail());
+        request.setPhoneNumber(client.getPhoneNumber());
+        request.setVersion(version);
+        return request;
+    }
+
+    private ClientPutRequest clientPutRequest(com.humanit.challenge.dto.client.ClientResponse client, Long version) {
+        ClientPutRequest request = new ClientPutRequest();
+        request.setFirstName(client.firstName());
+        request.setLastName(client.lastName());
+        request.setTaxIdentifier(client.taxIdentifier());
+        request.setEmail(client.email());
+        request.setPhoneNumber(client.phoneNumber());
+        request.setVersion(version);
+        return request;
     }
 
     private void assertStatus(HttpStatus status, Runnable action) {
