@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -24,6 +25,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.persistence.OptimisticLockException;
 
 /**
  * Cross-cutting RFC 9457 (Problem Details) error handling for all controllers.
@@ -150,6 +152,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 : status.getReasonPhrase();
         ProblemDetail problem = buildProblem(status, status.getReasonPhrase(), detail, request);
         return ResponseEntity.status(statusCode)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(problem);
+    }
+
+    @ExceptionHandler({OptimisticLockingFailureException.class, OptimisticLockException.class})
+    public ResponseEntity<ProblemDetail> handleOptimisticLock(Exception ex, WebRequest request) {
+        ProblemDetail problem = buildProblem(HttpStatus.CONFLICT, "Conflict",
+                "The resource was modified concurrently. Please retry the request.", request);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(problem);
     }
