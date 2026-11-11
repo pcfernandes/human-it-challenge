@@ -232,8 +232,32 @@ class DocumentServiceTest {
                 () -> documentService.update(owner.getId(), document.id(), currentClientVersion(owner.getId()),
                         new DocumentPutRequest(document.version() + 1, "DOC-STALE", null,
                                 LocalDate.of(2029, 1, 1))));
+        DocumentPatchRequest stalePatch = new DocumentPatchRequest();
+        stalePatch.setVersion(document.version() + 1);
+        stalePatch.setDescription(PatchValue.of("must not persist"));
+        assertStatus(HttpStatus.CONFLICT,
+                () -> documentService.patch(owner.getId(), document.id(), currentClientVersion(owner.getId()),
+                        stalePatch));
         assertStatus(HttpStatus.NOT_FOUND,
                 () -> documentService.getById(other.getId(), document.id()));
+        assertThat(documentService.getById(owner.getId(), document.id()).description()).isNull();
+    }
+
+    @Test
+    void staleClientOrDocumentVersionPreventsStandaloneDocumentDelete() {
+        Client client = createClient();
+        var document = documentService.create(client.getId(), client.getVersion(),
+                new DocumentCreateRequest("DOC-DELETE-STALE", null, LocalDate.of(2028, 1, 1)));
+        Long currentClientVersion = currentClientVersion(client.getId());
+
+        assertStatus(HttpStatus.CONFLICT,
+                () -> documentService.delete(client.getId(), document.id(), currentClientVersion - 1,
+                        document.version()));
+        assertStatus(HttpStatus.CONFLICT,
+                () -> documentService.delete(client.getId(), document.id(), currentClientVersion,
+                        document.version() + 1));
+
+        assertThat(documentRepository.existsById(document.id())).isTrue();
     }
 
     @ParameterizedTest

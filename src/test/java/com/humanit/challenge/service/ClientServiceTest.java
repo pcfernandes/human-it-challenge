@@ -127,6 +127,39 @@ class ClientServiceTest {
     }
 
     @Test
+    void clientPutAndPatchRejectMissingOrNegativeExpectedVersionsAsBadRequest() {
+        var created = clientService.create(clientCreateRequest("TAX-CLIENT-INVALID-VERSION"));
+        ClientPutRequest putMissing = putRequest(created);
+        putMissing.setVersion(null);
+        ClientPutRequest putNegative = putRequest(created);
+        putNegative.setVersion(-1L);
+
+        ClientPatchRequest patchMissing = new ClientPatchRequest();
+        ClientPatchRequest patchNegative = new ClientPatchRequest();
+        patchNegative.setVersion(-1L);
+
+        assertStatus(HttpStatus.BAD_REQUEST, () -> clientService.update(created.id(), putMissing));
+        assertStatus(HttpStatus.BAD_REQUEST, () -> clientService.update(created.id(), putNegative));
+        assertStatus(HttpStatus.BAD_REQUEST, () -> clientService.patch(created.id(), patchMissing));
+        assertStatus(HttpStatus.BAD_REQUEST, () -> clientService.patch(created.id(), patchNegative));
+        assertThat(clientRepository.existsById(created.id())).isTrue();
+    }
+
+    @Test
+    void clientPatchRejectsStaleExpectedVersionWithoutPersistingChanges() {
+        var created = clientService.create(clientCreateRequest("TAX-CLIENT-STALE-PATCH"));
+        ClientPatchRequest patch = new ClientPatchRequest();
+        patch.setVersion(created.version() + 1);
+        patch.setFirstName(PatchValue.of("must not persist"));
+
+        assertStatus(HttpStatus.CONFLICT, () -> clientService.patch(created.id(), patch));
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(clientRepository.findById(created.id()).orElseThrow().getFirstName()).isEqualTo("Ada");
+    }
+
+    @Test
     void duplicateDocumentNumberInSingleCreateThrowsConflict() {
         ClientCreateRequest request = new ClientCreateRequest();
         request.setFirstName("Ada");
@@ -179,6 +212,30 @@ class ClientServiceTest {
         var patched = clientService.patch(created.id(), patch);
         assertThat(patched.firstName()).isEqualTo("Ada2");
         assertThat(patched.documents()).hasSize(1);
+    }
+
+    @Test
+    void clientDeleteRejectsMissingNegativeAndStaleVersionsWithoutDeleting() {
+        var created = createClientWithDocuments("TAX-DELETE-VERSION", "DOC-DELETE-VERSION");
+
+        assertStatus(HttpStatus.BAD_REQUEST, () -> clientService.delete(created.id(), null));
+        assertStatus(HttpStatus.BAD_REQUEST, () -> clientService.delete(created.id(), -1L));
+        assertStatus(HttpStatus.CONFLICT, () -> clientService.delete(created.id(), created.version() + 1));
+
+        assertThat(clientRepository.existsById(created.id())).isTrue();
+        assertThat(documentRepository.findAll()).extracting(document -> document.getId())
+                .containsExactly(created.documents().get(0).id());
+    }
+
+    @Test
+    void clientDeleteWithCurrentVersionRemovesClientAndDocuments() {
+        var created = createClientWithDocuments("TAX-DELETE-CURRENT", "DOC-DELETE-CURRENT");
+        Long documentId = created.documents().get(0).id();
+
+        clientService.delete(created.id(), created.version());
+
+        assertThat(clientRepository.existsById(created.id())).isFalse();
+        assertThat(documentRepository.existsById(documentId)).isFalse();
     }
 
     @ParameterizedTest
@@ -256,6 +313,44 @@ class ClientServiceTest {
 
         assertThat(updated.documents()).extracting(document -> document.id()).containsExactlyElementsOf(originalIds);
         assertThat(documentRepository.findAll()).hasSize(2);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
+    void clientPatchWithOmittedOrEmptyDocumentsDoesNotForceIncrementClient(boolean explicitlyEmpty) {
+        var created = createClientWithDocuments("TAX-NO-DOC-CHANGE-" + explicitlyEmpty, "DOC-NO-DOC-CHANGE");
+        ClientPatchRequest patch = new ClientPatchRequest();
+        patch.setVersion(created.version());
+        if (explicitlyEmpty) {
+            patch.setDocuments(PatchValue.of(List.of()));
+        }
+
+        ClientResponse updated = clientService.patch(created.id(), patch);
+        entityManager.flush();
+        entityManager.clear();
+        Long persistedVersion = clientRepository.findById(created.id()).orElseThrow().getVersion();
+
+        assertThat(persistedVersion).isEqualTo(created.version());
+        assertThat(updated.version()).isEqualTo(created.version());
+    }
+
+    @Test
+    void nestedPatchWithIdentityAndVersionOnlyDoesNotForceIncrementClient() {
+        var created = createClientWithDocuments("TAX-NESTED-NOOP", "DOC-NESTED-NOOP");
+        var existing = created.documents().get(0);
+        ClientDocumentPatchRequest noFields = new ClientDocumentPatchRequest();
+        noFields.setId(existing.id());
+        noFields.setVersion(existing.version());
+        ClientPatchRequest patch = new ClientPatchRequest();
+        patch.setVersion(created.version());
+        patch.setDocuments(PatchValue.of(List.of(noFields)));
+
+        ClientResponse updated = clientService.patch(created.id(), patch);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(clientRepository.findById(created.id()).orElseThrow().getVersion()).isEqualTo(created.version());
+        assertThat(updated.version()).isEqualTo(created.version());
     }
 
     @Test
@@ -368,6 +463,16 @@ class ClientServiceTest {
         return clientService.create(create);
     }
 
+    private ClientCreateRequest clientCreateRequest(String taxIdentifier) {
+        ClientCreateRequest request = new ClientCreateRequest();
+        request.setFirstName("Ada");
+        request.setLastName("Lovelace");
+        request.setTaxIdentifier(taxIdentifier);
+        request.setEmail(taxIdentifier.toLowerCase() + "@example.com");
+        request.setPhoneNumber("123");
+        return request;
+    }
+
     private ClientPutRequest putRequest(ClientResponse client) {
         ClientPutRequest put = new ClientPutRequest();
         put.setFirstName(client.firstName());
@@ -377,5 +482,11 @@ class ClientServiceTest {
         put.setPhoneNumber(client.phoneNumber());
         put.setVersion(client.version());
         return put;
+    }
+
+    private void assertStatus(HttpStatus status, Runnable action) {
+        assertThatThrownBy(action::run)
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode()).isEqualTo(status));
     }
 }
