@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Objects;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -61,10 +63,8 @@ public class ClientService {
     }
 
     @Transactional(readOnly = true)
-    public List<ClientResponse> list() {
-        return clientRepository.findAll().stream()
-                .map(ClientMapper::toResponse)
-                .toList();
+    public Page<ClientResponse> list(Pageable pageable) {
+        return clientRepository.findAll(pageable).map(ClientMapper::toResponse);
     }
 
     @Transactional

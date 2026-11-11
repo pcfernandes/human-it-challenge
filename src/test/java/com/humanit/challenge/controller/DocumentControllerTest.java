@@ -1,6 +1,7 @@
 package com.humanit.challenge.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -20,12 +21,14 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,12 +38,14 @@ import com.humanit.challenge.dto.document.DocumentCreateRequest;
 import com.humanit.challenge.dto.document.DocumentPatchRequest;
 import com.humanit.challenge.dto.document.DocumentPutRequest;
 import com.humanit.challenge.dto.document.DocumentResponse;
+import com.humanit.challenge.config.AppPaginationProperties;
 import com.humanit.challenge.exception.GlobalExceptionHandler;
 import com.humanit.challenge.service.DocumentService;
 
 @WebMvcTest(DocumentController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
+@EnableConfigurationProperties(AppPaginationProperties.class)
 class DocumentControllerTest {
 
     @Autowired
@@ -69,21 +74,90 @@ class DocumentControllerTest {
     @Test
     void listAndGetDocumentAreScopedToClient() throws Exception {
         DocumentResponse document = response(12L, 7L, 0L);
-        when(documentService.list(eq(7L), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(document)));
+        when(documentService.list(eq(7L), any(Pageable.class))).thenAnswer(invocation -> {
+            Pageable pageable = invocation.getArgument(1);
+            return new PageImpl<>(List.of(document), pageable, 1);
+        });
         when(documentService.getById(7L, 12L)).thenReturn(document);
 
         mockMvc.perform(get("/api/clients/7/documents"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(12))
-                .andExpect(jsonPath("$.content[0].clientId").value(7));
+                .andExpect(jsonPath("$.content[0].clientId").value(7))
+                .andExpect(jsonPath("$.content[0].number").value("DOC-12"))
+                .andExpect(jsonPath("$.content[0].expirationDate").value("2030-01-01"));
+        mockMvc.perform(get("/api/clients/7/documents").param("page", "2").param("size", "3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(2))
+                .andExpect(jsonPath("$.size").value(3));
+        mockMvc.perform(get("/api/clients/7/documents").param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(100));
         mockMvc.perform(get("/api/clients/7/documents/12"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(12))
                 .andExpect(jsonPath("$.clientId").value(7));
 
-        verify(documentService).list(eq(7L), any(Pageable.class));
+        org.mockito.ArgumentCaptor<Pageable> pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(documentService, org.mockito.Mockito.times(3)).list(eq(7L), pageableCaptor.capture());
+        assertThat(pageableCaptor.getAllValues()).allSatisfy(pageable ->
+                assertThat(pageable.getSort()).isEqualTo(Sort.by(Sort.Direction.ASC, "id")));
+        assertThat(pageableCaptor.getAllValues().get(0).getPageNumber()).isZero();
+        assertThat(pageableCaptor.getAllValues().get(0).getPageSize()).isEqualTo(20);
+        assertThat(pageableCaptor.getAllValues().get(1).getPageNumber()).isEqualTo(2);
+        assertThat(pageableCaptor.getAllValues().get(1).getPageSize()).isEqualTo(3);
         verify(documentService).getById(7L, 12L);
+    }
+
+    @Test
+    void emptyAndOutOfRangeDocumentPagesReturnEmptyPageEnvelope() throws Exception {
+        when(documentService.list(eq(7L), any(Pageable.class))).thenAnswer(invocation -> {
+            Pageable pageable = invocation.getArgument(1);
+            long totalElements = pageable.getPageNumber() == 0 ? 0 : 1;
+            return new PageImpl<>(List.of(), pageable, totalElements);
+        });
+
+        mockMvc.perform(get("/api/clients/7/documents"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(
+                        "{\"content\":[],\"page\":0,\"size\":20,\"totalElements\":0,\"totalPages\":0}", true));
+        mockMvc.perform(get("/api/clients/7/documents").param("page", "2").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(
+                        "{\"content\":[],\"page\":2,\"size\":1,\"totalElements\":1,\"totalPages\":1}", true));
+    }
+
+    @Test
+    void invalidDocumentPaginationReturnsBadRequestProblemDetails() throws Exception {
+        mockMvc.perform(get("/api/clients/7/documents").param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400));
+        mockMvc.perform(get("/api/clients/7/documents").param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        mockMvc.perform(get("/api/clients/7/documents").param("size", "0"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/clients/7/documents").param("size", "bad"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        verifyNoInteractions(documentService);
+    }
+
+    @Test
+    void missingClientDocumentListReturnsNotFoundProblemDetails() throws Exception {
+        when(documentService.list(eq(999L), any(Pageable.class)))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
+
+        mockMvc.perform(get("/api/clients/999/documents"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(404));
+        verify(documentService).list(eq(999L), any(Pageable.class));
     }
 
     @Test

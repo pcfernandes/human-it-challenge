@@ -1,6 +1,8 @@
 package com.humanit.challenge.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -18,10 +20,14 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.humanit.challenge.dto.client.ClientCreateRequest;
 import com.humanit.challenge.dto.client.ClientPatchRequest;
 import com.humanit.challenge.dto.client.ClientPutRequest;
+import com.humanit.challenge.config.AppPaginationProperties;
 import com.humanit.challenge.dto.client.ClientResponse;
 import com.humanit.challenge.exception.GlobalExceptionHandler;
 import com.humanit.challenge.service.ClientService;
@@ -36,6 +43,7 @@ import com.humanit.challenge.service.ClientService;
 @WebMvcTest(ClientController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
+@EnableConfigurationProperties(AppPaginationProperties.class)
 class ClientControllerTest {
 
     @Autowired
@@ -70,13 +78,73 @@ class ClientControllerTest {
 
     @Test
     void listClients() throws Exception {
-        when(clientService.list()).thenReturn(List.of(response(42L, "Ada"), response(43L, "Grace")));
+        when(clientService.list(any(Pageable.class))).thenAnswer(invocation -> {
+            Pageable pageable = invocation.getArgument(0);
+            return new PageImpl<>(List.of(response(42L, "Ada"), response(43L, "Grace")), pageable, 2);
+        });
 
         mockMvc.perform(get("/api/clients"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].firstName").value("Ada"))
-                .andExpect(jsonPath("$[1].firstName").value("Grace"));
-        verify(clientService).list();
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(42))
+                .andExpect(jsonPath("$.content[0].firstName").value("Ada"))
+                .andExpect(jsonPath("$.content[0].taxIdentifier").value("TAX-42"))
+                .andExpect(jsonPath("$.content[1].firstName").value("Grace"));
+        mockMvc.perform(get("/api/clients").param("page", "1").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(1));
+        mockMvc.perform(get("/api/clients").param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(100));
+
+        org.mockito.ArgumentCaptor<Pageable> pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(clientService, atLeastOnce()).list(pageableCaptor.capture());
+        assertThat(pageableCaptor.getAllValues()).allSatisfy(pageable -> {
+            assertThat(pageable.getSort()).isEqualTo(Sort.by(Sort.Direction.ASC, "id"));
+        });
+        assertThat(pageableCaptor.getAllValues().get(0).getPageNumber()).isZero();
+        assertThat(pageableCaptor.getAllValues().get(0).getPageSize()).isEqualTo(20);
+        assertThat(pageableCaptor.getAllValues().get(1).getPageNumber()).isEqualTo(1);
+        assertThat(pageableCaptor.getAllValues().get(1).getPageSize()).isEqualTo(1);
+    }
+
+    @Test
+    void emptyAndOutOfRangeClientPagesReturnEmptyPageEnvelope() throws Exception {
+        when(clientService.list(any(Pageable.class))).thenAnswer(invocation -> {
+            Pageable pageable = invocation.getArgument(0);
+            long totalElements = pageable.getPageNumber() == 0 ? 0 : 1;
+            return new PageImpl<>(List.of(), pageable, totalElements);
+        });
+
+        mockMvc.perform(get("/api/clients"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(
+                        "{\"content\":[],\"page\":0,\"size\":20,\"totalElements\":0,\"totalPages\":0}", true));
+        mockMvc.perform(get("/api/clients").param("page", "2").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(
+                        "{\"content\":[],\"page\":2,\"size\":1,\"totalElements\":1,\"totalPages\":1}", true));
+    }
+
+    @Test
+    void invalidClientPaginationReturnsBadRequestProblemDetails() throws Exception {
+        mockMvc.perform(get("/api/clients").param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400));
+        mockMvc.perform(get("/api/clients").param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        mockMvc.perform(get("/api/clients").param("size", "0"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/clients").param("page", "bad"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        verifyNoInteractions(clientService);
     }
 
     @Test
