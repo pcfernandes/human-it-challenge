@@ -336,53 +336,77 @@ Implement the complete Client and Document domain behavior, including CRUD, vali
 
 ### Objective
 
-Secure the API using Spring Security and signed JWTs while preserving Phase 2 behavior.
+Secure the API using Spring Security and signed JWTs while preserving Phase 2 behavior. Phase 3 uses one authenticated user type with no roles or permissions. JWTs are stateless, signed with HS256, and use BCrypt for password encoding. Production credentials come from environment variables; the development demo user is available only with the `dev & !prod` profile condition. There is no user database, registration or refresh-token flow. HTTP 403 uses a standard safe handler; no artificial authorization rules are added solely to produce forbidden responses.
+
+### Approved Phase 3 decisions
+
+- Login endpoint: `POST /auth/login`.
+- Production credentials are supplied through environment variables; the development demo user is not provisioned in production and is restricted to `dev & !prod`.
+- There is one authenticated user type and no roles or permissions.
+- Use stateless JWT bearer authentication with HS256, the existing external JWT secret and existing token-expiration configuration; use BCrypt for password encoding.
+- Keep the existing Spring Security dependencies and JWT property/validation infrastructure. Do not add a user database, registration, refresh tokens, another JWT library or additional infrastructure.
+- Return safe Problem Details for authentication (401) and access-denied (403) failures. Do not add artificial authorization rules; a standard 403 handler is sufficient where no forbidden business action is defined.
 
 ### Task list
 
 #### T3.1 — Security baseline and JWT infrastructure
 
-- **In scope:** JWT generation and validation, security filter chain, stateless sessions, password encoding, role/authority model baseline.
-- **Developer:** Implement JWT utilities and security configuration.
-- **Tester:** Verify token validation and protected-endpoint rejection.
-- **Reviewer:** Audit security configuration and secret handling.
+- **In scope:** Spring Security filter chain; stateless sessions; disable CSRF for the Bearer-token API; HS256 JWT encoder/decoder using `AppJwtProperties` and the externally supplied secret; existing token-expiration configuration; BCrypt password encoder; OAuth2 Resource Server JWT validation; safe 401/403 Problem Details handlers; permit `/auth/login` and Swagger/OpenAPI routes; require authentication for all other routes. No roles or permissions.
+- **Out of scope:** Login controller/token issuance, account provisioning, user database, registration, refresh tokens and artificial authorization rules.
+- **Developer:** Implement only the security configuration and JWT infrastructure using existing dependencies and `AppJwtProperties`/`JwtSecretValidator`.
+- **Tester:** Verify valid signed JWT acceptance; invalid-signature and expired-token rejection; unauthenticated protected-route 401; safe security error bodies; and stateless behavior.
+- **Reviewer:** Audit security configuration, token validation, secret handling and route policy.
 - **Acceptance criteria:**
-  - JWT validation rejects invalid or expired tokens.
-  - Security is stateless.
-  - BCrypt is used for password hashing.
+  - Valid HS256 JWTs are accepted and invalid-signature or expired JWTs are rejected.
+  - Protected routes reject requests without a bearer JWT using HTTP 401; login and Swagger/OpenAPI paths are permitted.
+  - No server-side session is created and CSRF is disabled for the API.
+  - BCrypt password encoder is configured.
+  - Authentication and access-denied error bodies contain no secrets or token contents.
 
-#### T3.2 — Login API and development user
+#### T3.2 — One-user credential provisioning
 
-- **In scope:** `POST /auth/login`, credential validation, JWT response, configurable development-only demo user provisioning.
-- **Developer:** Implement login endpoint and demo user bootstrap (dev profile only).
-- **Tester:** Verify successful login and HTTP 401 for invalid credentials.
-- **Reviewer:** Check production provisioning is disabled.
+- **In scope:** One authenticated account source; production credentials from environment variables; configurable demo-user credentials only with `dev & !prod`; BCrypt-backed credential verification.
+- **Out of scope:** User database, registration and account-management endpoints.
+- **Developer:** Configure the approved account sources without provisioning the demo user in production.
+- **Tester:** Verify credential configuration, BCrypt verification, invalid credentials, and absence of demo-user provisioning in production and combined `dev,prod` profiles.
+- **Reviewer:** Check credential externalization and profile isolation.
 - **Acceptance criteria:**
-  - Valid credentials return a signed JWT.
-  - Invalid credentials return HTTP 401.
-  - Demo user is not provisioned in production.
+  - Exactly one authenticated user type is supported; no roles or permissions are introduced.
+  - Production credentials are externalized and development demo credentials are available only when `dev & !prod` applies.
+  - No account is persisted to a database.
 
-#### T3.3 — Endpoint protection
+#### T3.3 — Login API and token contract
 
-- **In scope:** Require valid JWT for Client and Document endpoints; return appropriate HTTP 401 and 403 responses.
-- **Developer:** Protect business endpoints.
-- **Tester:** Verify authenticated and unauthenticated access.
-- **Reviewer:** Audit authorization behavior and error format.
+- **In scope:** `POST /auth/login`, credential validation and signed JWT response using the configured HS256 encoder and expiration.
+- **Out of scope:** Registration, refresh tokens and additional user types.
+- **Developer:** Implement the login endpoint and token issuance for the single authenticated user type.
+- **Tester:** Verify valid credentials and generic HTTP 401 for invalid credentials.
+- **Reviewer:** Check login contract and sensitive-data handling.
 - **Acceptance criteria:**
-  - Client and Document endpoints require valid JWT.
-  - Missing/invalid tokens return HTTP 401.
-  - Forbidden actions return HTTP 403.
+  - Login is available at `POST /auth/login` and valid credentials return a signed JWT.
+  - Invalid credentials return HTTP 401 without distinguishing account existence from password mismatch.
+  - JWTs use HS256 and the configured expiration; no password, hash or secret is returned.
 
-#### T3.4 — Phase 3 contract regression
+#### T3.4 — Public routes and endpoint protection
 
-- **In scope:** Re-run Phase 2 tests under authenticated requests where applicable and verify no business regression.
-- **Developer:** Adjust tests/endpoints to use JWT as needed.
-- **Tester:** Expand security tests.
-- **Reviewer:** Audit overall phase.
+- **In scope:** Permit `/auth/login` and Swagger/OpenAPI routes; require a valid JWT for all other routes, including Client and Document APIs.
+- **Developer:** Verify and adjust route access policy without introducing role/permission rules.
+- **Tester:** Verify public paths, authenticated access and missing/invalid/expired bearer-token rejection.
+- **Reviewer:** Audit route coverage, standard 401/403 handling and Problem Details safety.
 - **Acceptance criteria:**
-  - Phase 2 functional tests still pass.
-  - Security happy-path and failure tests pass.
-  - Phase 3 independent Reviewer audit is complete.
+  - Login and Swagger/OpenAPI routes are accessible without a JWT.
+  - All other routes require a valid JWT.
+  - Missing/invalid/expired tokens return HTTP 401; a standard safe HTTP 403 handler exists without artificial authorization rules.
+
+#### T3.5 — Phase 2 regression and Phase 3 security audit
+
+- **In scope:** Re-run Phase 2 behavior under the security filter chain, adjust tests to authenticate where appropriate, and perform the independent Phase 3 Reviewer audit.
+- **Developer:** Resolve only approved security integration or regression issues.
+- **Tester:** Verify Phase 2 regression and the complete Phase 3 security contract.
+- **Reviewer:** Independently audit the Phase 3 implementation and regression evidence.
+- **Acceptance criteria:**
+  - Phase 2 functional behavior remains unchanged.
+  - Phase 3 security tests pass and the independent Reviewer audit is complete before Tech Lead acceptance.
 
 ### Phase 3 exit criteria
 
@@ -390,6 +414,7 @@ Secure the API using Spring Security and signed JWTs while preserving Phase 2 be
 - Business endpoints are protected.
 - Security tests pass.
 - Phase 3 independent Reviewer audit is complete.
+- Phase 3 remains incomplete until the human Tech Lead grants acceptance.
 
 ## 8. Phase 4 — OpenAPI Documentation and API Contract Hardening
 
