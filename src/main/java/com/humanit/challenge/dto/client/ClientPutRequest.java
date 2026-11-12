@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Request contract for a full replacement of editable Client fields
@@ -21,26 +22,33 @@ import jakarta.validation.constraints.Size;
  * Jackson's explicit-null binding ({@code setDocuments(null)}) is what {@code @NotNull}
  * rejects.
  */
+@Schema(description = "Full replacement input for editable Client fields. Requires a nonnegative expected version. "
+        + "Documents are collection-preserving: omitted or empty preserves current Documents; explicit null is invalid.")
 public class ClientPutRequest {
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 100, description = "Required nonblank given name.")
     @Size(max = 100)
     private String firstName;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 100, description = "Required nonblank family name.")
     @Size(max = 100)
     private String lastName;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 50, description = "Required globally unique tax identifier.")
     @Size(max = 50)
     private String taxIdentifier;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 255, format = "email", description = "Required valid email address.")
     @Email
     @Size(max = 255)
     private String email;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 50, description = "Required nonblank phone number.")
     @Size(max = 50)
     private String phoneNumber;
 
@@ -49,6 +57,8 @@ public class ClientPutRequest {
     private Long version;
 
     @NotNull
+    @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+            description = "Optional collection. Omission or an empty array preserves all existing Documents; null is invalid.")
     private List<@NotNull @Valid ClientDocumentPutRequest> documents = new ArrayList<>();
 
     public ClientPutRequest() {

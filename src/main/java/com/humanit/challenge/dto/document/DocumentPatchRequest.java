@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Request contract for a partial update of a Document
@@ -22,6 +23,8 @@ import jakarta.validation.constraints.Size;
  * is invalid for {@code number} and {@code expirationDate}; an explicit {@code null} for
  * {@code description} clears it.
  */
+@Schema(description = "Partial Document update input. Requires the expected nonnegative Document version. Omitted values "
+        + "remain unchanged; number and expirationDate reject null; description:null clears the description.")
 public class DocumentPatchRequest {
 
     @NotNull
@@ -29,11 +32,14 @@ public class DocumentPatchRequest {
     private Long version;
 
     @PatchRequired
+    @Schema(implementation = String.class, minLength = 1, maxLength = 100, description = "Optional patch value; omitted preserves the current number; explicit null/blank is invalid.")
     private PatchValue<@NotBlank @Size(max = 100) String> number = PatchValue.absent();
 
+    @Schema(implementation = String.class, maxLength = 1000, description = "Optional patch value; explicit null clears the description.")
     private PatchValue<@Size(max = 1000) String> description = PatchValue.absent();
 
     @PatchRequired
+    @Schema(implementation = LocalDate.class, description = "Optional ISO date patch value; omitted preserves the current value; explicit null is invalid.")
     private PatchValue<LocalDate> expirationDate = PatchValue.absent();
 
     public DocumentPatchRequest() {

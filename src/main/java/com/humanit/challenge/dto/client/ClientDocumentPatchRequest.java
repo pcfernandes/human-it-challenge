@@ -11,6 +11,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * One Document entry inside {@code ClientPatchRequest.documents}.
@@ -25,6 +26,8 @@ import jakarta.validation.constraints.Size;
  * A partial {@code id}/{@code version} pair is invalid. Ownership, unknown-ID handling,
  * version comparison and aggregate merge belong to the service layer and are not checked here.
  */
+@Schema(description = "Nested Document patch entry. Existing Documents require id and version; new Documents omit both "
+        + "and require number and expirationDate. Omitted scalar values remain unchanged; no deletion is implied.")
 public class ClientDocumentPatchRequest {
 
     private Long id;
@@ -33,11 +36,14 @@ public class ClientDocumentPatchRequest {
     private Long version;
 
     @PatchRequired
+    @Schema(implementation = String.class, minLength = 1, maxLength = 100, description = "Optional patch value; required for new Documents; explicit null/blank is invalid.")
     private PatchValue<@NotBlank @Size(max = 100) String> number = PatchValue.absent();
 
+    @Schema(implementation = String.class, maxLength = 1000, description = "Optional patch value; explicit null clears the description.")
     private PatchValue<@Size(max = 1000) String> description = PatchValue.absent();
 
     @PatchRequired
+    @Schema(implementation = LocalDate.class, description = "Optional ISO date patch value; required for new Documents; explicit null is invalid.")
     private PatchValue<LocalDate> expirationDate = PatchValue.absent();
 
     public ClientDocumentPatchRequest() {

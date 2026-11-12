@@ -10,32 +10,40 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Request contract for {@code POST /clients}. No version is required on creation.
  * {@code documents} is optional: an omitted collection, an empty collection and an
  * explicit {@code documents: null} are all treated as "no Documents to create".
  */
+@Schema(description = "Client creation input. Required text fields are nonblank and bounded; email must be valid. "
+        + "The optional documents collection creates initial owned Documents. On POST only, null is treated as omitted.")
 public class ClientCreateRequest {
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 100, description = "Required nonblank given name.")
     @Size(max = 100)
     private String firstName;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 100, description = "Required nonblank family name.")
     @Size(max = 100)
     private String lastName;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 50, description = "Required globally unique tax identifier.")
     @Size(max = 50)
     private String taxIdentifier;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 255, format = "email", description = "Required valid email address.")
     @Email
     @Size(max = 255)
     private String email;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 50, description = "Required nonblank phone number; no country-specific format is imposed.")
     @Size(max = 50)
     private String phoneNumber;
 
