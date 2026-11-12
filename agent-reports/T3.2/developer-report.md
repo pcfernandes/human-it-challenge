@@ -1,14 +1,14 @@
-# Developer Report — T3.2 Single-user provisioning with BCrypt hashes
+# Developer Report — T3.2 Isolated branch and PR close-out
 
 ## 1. Task ID
 
-- **VERIFIED** (direct Tech Lead tasking): `T3.2` — configure one in-memory account for development and production using BCrypt hashes, keep the demo user restricted to `dev & !prod`, and never configure or store plaintext passwords.
+- **VERIFIED** (direct Tech Lead tasking): `T3.2` — finalize approved single-user provisioning, correct the identified stale Javadoc, create an isolated branch based on updated `origin/main`, selectively commit and push the T3.2 changes, and open a PR without merging.
 
 ## 2. Execution identifier and date
 
-- **VERIFIED** (this execution): `T3.2-DEV-001`.
+- **VERIFIED** (this execution): `T3.2-DEV-002`.
 - **VERIFIED** (execution environment): 2026-11-12.
-- **NOT AVAILABLE**: No earlier `agent-reports/T3.2/developer-report.md` was present when this execution began; therefore no prior Developer report needed archiving under `agent-reports/README.md`, Section 6.
+- **VERIFIED** (`agent-reports/T3.2/history/developer-002.md` compared with the previous primary): The previous `developer-report.md` was archived unchanged before replacing the primary report, following `agent-reports/README.md`, Section 6.
 
 ## 3. Agent role and model
 
@@ -16,83 +16,83 @@
 
 ## 4. Authorized scope
 
-- **VERIFIED** (direct Tech Lead tasking): Reuse current configuration where applicable; provide one in-memory user; load the production username and BCrypt hash from external configuration; permit the demo user only under `dev & !prod`; validate credentials using `PasswordEncoder.matches()`; fail startup for missing/invalid configuration; do not log passwords, hashes or tokens.
-- **VERIFIED** (direct Tech Lead tasking): No plaintext passwords in YAML or Java configuration; no startup-time application hash generation; no user database, roles, registration, refresh tokens, endpoints, new dependencies or JWT issuance. Run focused tests and the full Maven suite once; preserve unrelated worktree changes; stop after implementation and reporting; do not self-approve or mark T3.2 complete.
-- **VERIFIED** (`implementation-plan.md`, Phase 3 T3.2): The task is one-user provisioning without a user database/account-management endpoints, and production must not provision the demo account.
-- **VERIFIED** (`agent-reports/README.md`, Sections 4–6): This report uses the mandatory thirteen-section format and evidence markers; a previous primary report must be archived before replacement.
+- **VERIFIED** (direct Tech Lead tasking): T3.2 was approved; correct only the stale Javadoc, preserve dirty work, base the isolated task branch on updated `origin/main`, commit only approved T3.2 files, push that branch, request a GitHub PR with the prescribed title/body, and do not merge or start T3.3.
+- **VERIFIED** (`agent-reports/README.md`, Sections 4–6): Use the thirteen-section report format, evidence markers and execution history; author only this Developer report and do not modify other agents' reports.
+- **VERIFIED** (direct tasking): The prior Tester result is PASS (23 focused tests; 329 full-suite tests), and the prior Reviewer result is PASS with 0 Critical/Major findings; the Javadoc issue is Minor and authorized for correction.
 
 ## 5. Files inspected
 
-- **VERIFIED**: `agent-reports/README.md` — report sections, evidence markers, execution history, and handoff workflow.
-- **VERIFIED**: `implementation-plan.md`, Phase 3 — approved one-user T3.2 scope and profile-isolation acceptance criteria.
-- **VERIFIED**: `src/main/java/com/humanit/challenge/config/AppDemoUserProperties.java`, `DevConfigPropertiesRegistration.java`, `ConfigPropertiesRegistration.java`, and `AppJwtProperties.java` — existing development-only credentials binding and JWT configuration.
-- **VERIFIED**: `src/main/java/com/humanit/challenge/security/SecurityConfiguration.java` and `agent-reports/T3.1/architect-proposal.md` — T3.1 BCrypt encoder/security infrastructure and approved in-memory user provisioning approach.
-- **VERIFIED**: `src/main/resources/application.yml`, `application-dev.yml`, `application-prod.yml`, `README.md`, `pom.xml`, and related profile/security tests — existing external configuration, docs, dependencies and test conventions.
-- **VERIFIED**: Initial `git status --short` — pre-existing modified `agent-reports/decisions.md` and untracked governance/performance report directories were present before implementation.
+- **VERIFIED**: `agent-reports/README.md`; `implementation-plan.md`, Phase 3 T3.2; `agent-reports/T3.2/developer-report.md`, `tester-report.md` and `reviewer-report.md`.
+- **VERIFIED**: `src/main/java/com/humanit/challenge/config/AppDemoUserProperties.java` and the staged T3.2 implementation/configuration/test/docs paths.
+- **VERIFIED** (`git status --short --branch`, `git rev-parse`, `git log`): Initial branch was `feature/T3-authentication`, HEAD `3069338aea0e96e37b6ba41a287c9a566acc5597`; no pre-existing staged changes existed. The initial dirty work included T3.2 changes and separate unrelated `agent-reports/decisions.md` plus untracked governance/performance report directories.
 
 ## 6. Files changed
 
-- **VERIFIED**: `src/main/java/com/humanit/challenge/config/AppDemoUserProperties.java` — retained the existing dev property prefix and changed the credential field to `passwordHash`.
-- **VERIFIED**: `src/main/java/com/humanit/challenge/config/AppProductionUserProperties.java` and `ProductionUserPropertiesRegistration.java` — added production-specific properties at `app.security.user`, registered only when `prod` is active.
-- **VERIFIED**: `src/main/java/com/humanit/challenge/security/SingleUserProvisioningConfiguration.java` — added profile-conditioned in-memory user provisioning, BCrypt hash-format checks and safe startup errors that do not include credential values.
-- **VERIFIED**: `src/main/java/com/humanit/challenge/security/SecurityConfiguration.java` — retained the existing BCrypt `PasswordEncoder` and added a `DaoAuthenticationProvider`/`AuthenticationManager` wired to the single active `UserDetailsService` and that encoder.
-- **VERIFIED**: `src/main/resources/application.yml`, `application-dev.yml`, `application-prod.yml`, and `README.md` — documented the dev/prod BCrypt-hash environment variables without placing credentials or hashes in committed configuration.
-- **VERIFIED**: `src/test/java/com/humanit/challenge/config/StartupTestHarness.java`, `DemoUserPropertiesTest.java`, `ProductionUserProvisioningTest.java`, `ProdProfileStartupTest.java`, `CombinedDevProdProfilesTest.java`, `JwtSecretValidationTest.java`, and `src/test/java/com/humanit/challenge/security/SecurityConfigurationIntegrationTest.java` — added or adapted tests for profile selection, hash validation, authentication matching and startup failures. A temporary test-only credential/hash fixture is generated for tests; application startup does not encode plaintext.
-- **VERIFIED**: `agent-reports/T3.2/developer-report.md` — this report.
-- **VERIFIED** (`git status --short`, `git diff --stat`): The pre-existing modified `agent-reports/decisions.md` and untracked `GOV-DECISIONS-RECONSTRUCTION-*` / `PERF-NPLUS1-*` report directories were preserved and not edited. No dependency file, migration, user table, login endpoint, commit, push, merge or branch switch was made.
+- **VERIFIED** (`src/main/java/com/humanit/challenge/config/AppDemoUserProperties.java`): Corrected the Javadoc profile description from `@Profile("dev")` to `@Profile("dev & !prod")`. No application behavior was changed by this correction.
+- **VERIFIED** (`agent-reports/T3.2/history/developer-002.md`): Archived the previous primary Developer report unchanged before replacing it.
+- **VERIFIED** (`agent-reports/T3.2/developer-report.md`): Replaced the primary with this close-out execution report. No Tester or Reviewer report was modified.
+- **VERIFIED** (`git diff-tree --name-only -r bf2da5399301b3b9487984246efffd1eb6369e23`): The feature commit `bf2da5399301b3b9487984246efffd1eb6369e23` contains exactly these 20 T3.2 files: `README.md`; `agent-reports/T3.2/developer-report.md`, `history/developer-001.md`, `reviewer-report.md`, `tester-report.md`; `src/main/java/com/humanit/challenge/config/AppDemoUserProperties.java`, `AppProductionUserProperties.java`, `ProductionUserPropertiesRegistration.java`; `src/main/java/com/humanit/challenge/security/SecurityConfiguration.java`, `SingleUserProvisioningConfiguration.java`; `src/main/resources/application.yml`, `application-dev.yml`, `application-prod.yml`; `src/test/java/com/humanit/challenge/config/CombinedDevProdProfilesTest.java`, `DemoUserPropertiesTest.java`, `JwtSecretValidationTest.java`, `ProdProfileStartupTest.java`, `ProductionUserProvisioningTest.java`, `StartupTestHarness.java`; and `src/test/java/com/humanit/challenge/security/SecurityConfigurationIntegrationTest.java`.
+- **VERIFIED** (`git status --short` after commit and push): Unrelated `agent-reports/decisions.md` and untracked `GOV-DECISIONS-RECONSTRUCTION-001/`, `GOV-DECISIONS-RECONSTRUCTION-002/`, `PERF-NPLUS1-001/` and `PERF-NPLUS1-002/` remain in the worktree; they were not staged or changed by this close-out.
 
 ## 7. Commands executed
 
-- **VERIFIED**: `git status --short; git diff --stat` — captured initial unrelated worktree state before changes.
-- **VERIFIED**: `git diff --check; git status --short; git diff --stat` — checked whitespace and reviewed final changed/untracked paths; `git diff --check` reported no whitespace errors (Git displayed existing line-ending conversion warnings).
-- **VERIFIED**: `.\mvnw.cmd "-Dtest=DemoUserPropertiesTest,ProductionUserProvisioningTest,ProdProfileStartupTest,CombinedDevProdProfilesTest,SecurityConfigurationIntegrationTest" test` — focused provisioning/security tests passed.
-- **VERIFIED**: `.\mvnw.cmd test` — full Maven test suite passed once.
+- **VERIFIED**: `git status --short --branch; git branch --show-current; git rev-parse HEAD; git diff --cached --stat; git diff --stat; git diff --name-only; git diff --cached --name-only` — recorded initial branch, HEAD, dirty/staged state.
+- **VERIFIED**: `git fetch origin` — fetched updated remote refs.
+- **VERIFIED**: `git log --oneline --decorate --graph -12 origin/main; git merge-base --is-ancestor 3b2c32d origin/main; git branch -r --contains 3b2c32d` — confirmed T3.1 commit `3b2c32d` is an ancestor of `origin/main` after fetch.
+- **VERIFIED**: `git diff --quiet HEAD origin/main` — confirmed the old feature HEAD and fetched `origin/main` had identical trees before switching.
+- **VERIFIED**: `git switch -c feature/T3.2-user-provisioning origin/main` — created the required branch directly from updated `origin/main`, preserving tracked dirty changes and unrelated untracked files.
+- **VERIFIED**: `git add --` with the explicit T3.2 README/source/config/test paths and `agent-reports/T3.2` — staged only the approved T3.2 paths.
+- **VERIFIED**: `git status --short --branch; git diff --cached --stat; git diff --cached --name-status; git diff --name-status; git diff --cached --check; git diff --cached` — reviewed the complete staged diff (20 files, 617 insertions and 33 deletions); the separately modified decisions log and unrelated untracked report directories were excluded. No whitespace errors were reported; Git emitted line-ending conversion warnings.
+- **VERIFIED**: `git commit -m "feat(security): provision single user with BCrypt hashes"` — created feature commit `bf2da5399301b3b9487984246efffd1eb6369e23`.
+- **VERIFIED**: `git push -u origin feature/T3.2-user-provisioning` — pushed only the requested feature branch successfully.
+- **VERIFIED**: `git rev-parse HEAD; git diff-tree --no-commit-id --name-only -r HEAD; git merge-base HEAD origin/main; git rev-parse origin/main` — confirmed feature commit, committed paths and base SHA `c0c74de1faea1d3d443cdfbe48502fc72e3d664a`.
+- **VERIFIED**: `gh auth status` — attempted to check GitHub CLI availability; PowerShell reported `gh` is not recognized, so no PR was created.
+- **VERIFIED**: `git diff --no-index -- agent-reports/T3.2/developer-report.md agent-reports/T3.2/history/developer-002.md` — confirmed the archived previous Developer report is unchanged from the primary that was replaced.
+- **VERIFIED**: `git add -- agent-reports/T3.2/developer-report.md agent-reports/T3.2/history/developer-002.md; git status --short --branch; git diff --cached --stat; git diff --cached --check; git diff --cached` — staged and reviewed only the new Developer close-out report and its required archive; unrelated work remains unstaged.
+- **VERIFIED**: No Maven tests were rerun in this close-out; the only code change after prior verification was Javadoc-only, and no behavior change was made.
 
 ## 8. Evidence and observed results
 
-- **VERIFIED** (`SingleUserProvisioningConfiguration.java`): Development provisioning uses the existing `app.security.demo-user` properties and is guarded with `@Profile("dev & !prod")`. Production provisioning binds `app.security.user` and is guarded with `@Profile("prod")`. Both paths construct one `InMemoryUserDetailsManager` user with the supplied BCrypt hash and no authorities.
-- **VERIFIED** (`SecurityConfiguration.java`): The existing `BCryptPasswordEncoder` bean is injected into the configured `DaoAuthenticationProvider`; authentication uses that provider's `PasswordEncoder.matches()` behavior. No application startup hash generation was added.
-- **VERIFIED** (`application*.yml`, `README.md`): Dev uses `APP_SECURITY_DEMO_USER_USERNAME` and `APP_SECURITY_DEMO_USER_PASSWORD_HASH`; production uses `APP_SECURITY_USER_USERNAME` and `APP_SECURITY_USER_PASSWORD_HASH`. The checked-in YAML contains no credential values or plaintext passwords.
-- **VERIFIED** (`DemoUserPropertiesTest.java`, `SecurityConfigurationIntegrationTest.java`): Tests exercise the dev user's BCrypt hash, successful and unsuccessful password matching, successful authentication, and rejection of an incorrect password.
-- **VERIFIED** (`ProdProfileStartupTest.java`): Production profile tests load the external production user/hash and verify that the demo user is unavailable.
-- **VERIFIED** (`CombinedDevProdProfilesTest.java`): Combined `dev,prod` activation does not register/use the dev demo user; the production user source remains available.
-- **VERIFIED** (`DemoUserPropertiesTest.java`, `ProductionUserProvisioningTest.java`): Missing and malformed dev/production credential settings fail startup; asserted exception messages identify the relevant property prefix and omit credential/hash values.
-- **VERIFIED** (focused Maven command output): `Tests run: 19, Failures: 0, Errors: 0, Skipped: 0`; `BUILD SUCCESS`.
-- **VERIFIED** (full Maven command output): `Tests run: 329, Failures: 0, Errors: 0, Skipped: 0`; `BUILD SUCCESS`.
-- **NOT AVAILABLE**: No real deployment/secrets manager was available or used; production binding was verified through test-supplied external properties, not through a live production host.
+- **VERIFIED** (`git fetch origin` and `git log origin/main`): Updated `origin/main` is `c0c74de1faea1d3d443cdfbe48502fc72e3d664a`, a merge commit containing T3.1; commit `3b2c32d` is its ancestor. The feature branch was created at this SHA.
+- **VERIFIED** (`git diff --quiet HEAD origin/main` before branch creation): The previous branch HEAD and updated main tree matched, so switching directly to `origin/main` preserved the dirty T3.2 work without conflict; command output confirmed the new branch and listed retained modifications.
+- **VERIFIED** (`src/main/java/com/humanit/challenge/config/AppDemoUserProperties.java` after correction): Javadoc now documents the actual `dev & !prod` profile expression. The change is documentation-only.
+- **VERIFIED** (`git diff --cached --name-status`, staged diff and feature commit file list): Only T3.2 README, implementation/configuration, tests and `agent-reports/T3.2/` were included. Pre-existing unrelated changes were not staged.
+- **VERIFIED** (`git rev-parse HEAD` and `git push` output): Feature commit is `bf2da5399301b3b9487984246efffd1eb6369e23`; push to `origin/feature/T3.2-user-provisioning` succeeded.
+- **VERIFIED** (`git merge-base HEAD origin/main`): Commit base is `c0c74de1faea1d3d443cdfbe48502fc72e3d664a`.
+- **VERIFIED** (`agent-reports/T3.2/tester-report.md`, Sections 8 and 11): Tester records PASS, 23 focused tests and 329 full-suite tests, all without failures/errors/skips. **VERIFIED** (`agent-reports/T3.2/reviewer-report.md`, Sections 9 and 11): Reviewer records PASS and 0 Critical/Major findings, with the one Minor Javadoc finding now corrected.
+- **NOT AVAILABLE**: GitHub CLI is not installed/available in this environment; PR creation and authentication could not be performed. No PR URL or PR number exists yet.
+- **VERIFIED** (push output): GitHub printed `https://github.com/pcfernandes/human-it-challenge/pull/new/feature/T3.2-user-provisioning`. Manual compare URL: `https://github.com/pcfernandes/human-it-challenge/compare/main...feature/T3.2-user-provisioning?expand=1`.
 
 ## 9. Findings and severity
 
 | ID | Severity | Finding / evidence |
 |---|---|---|
-| T32-DEV-01 | Info | **VERIFIED**: Deployment operators must provide the external production username and BCrypt hash; omission or malformed configuration is designed to fail startup. No real deployment credentials were supplied or inspected. |
-| T32-DEV-02 | Pending | **PENDING VERIFICATION**: Independent Tester verification, independent Reviewer audit, and human Tech Lead acceptance have not been performed by this Developer execution. |
+| T32-CLOSE-01 | Blocker to PR creation | **VERIFIED**: `gh auth status` could not run because `gh` is not recognized as an available command. Branch push succeeded, but a human must create the PR using the compare URL. |
+| T32-CLOSE-02 | Info | **VERIFIED**: Existing unrelated modified/untracked governance and performance report files remain uncommitted and preserved. |
 
-No implementation-blocking finding was observed in the focused or full Maven runs. This is not a Reviewer conclusion or Tech Lead acceptance.
+No other blocking Git safety issue was observed. No reset, clean, discard, force-push, merge or rebase was run. The PR was not merged.
 
 ## 10. Decisions and reasoning
 
-- **VERIFIED**: Reused the existing development demo-user property prefix, preserving the approved `dev & !prod` gate while replacing the old raw-password field with a BCrypt hash field.
-- **VERIFIED**: Added a narrowly scoped production credential record/registration because the prior configuration only provided dev demo-user credentials; binding production values separately prevents accidentally treating the dev demo account as the production user.
-- **VERIFIED**: Validated username presence and BCrypt hash shape before constructing the in-memory user. Startup failure text contains property names only, not configured credential values.
-- **VERIFIED**: Used Spring Security's existing BCrypt encoder with a DAO provider/AuthenticationManager rather than adding dependencies or implementing a custom password comparator. No roles, permission grants, persistence, token issuance or login endpoint were introduced.
-- **VERIFIED**: Updated README instructions to use only hash-valued credential environment variables. It directs operators to provide hashes from a secure provisioning process rather than storing or encoding a plaintext password in application configuration.
-- **VERIFIED**: Test fixture generation is restricted to test code; the application uses the externally supplied hash as-is and does not generate a hash from plaintext during application startup.
+- **VERIFIED**: Fetched origin before branch creation and confirmed T3.1 was contained in updated `origin/main`; based the new branch directly on that SHA, not on the previous feature branch.
+- **VERIFIED**: Kept unrelated staged state absent (there was none initially) and staged explicit T3.2 paths only. Reviewed the complete staged diff before committing.
+- **VERIFIED**: Did not rerun tests because the additional source change only updates Javadoc; prior Tester evidence remains as reported. No additional tests or behavior changes were introduced.
+- **VERIFIED**: Pushed only `feature/T3.2-user-provisioning`. Because `gh` is unavailable, provided the exact compare URL rather than attempting an unapproved or unverified alternate PR workflow.
+- **VERIFIED** (direct Tech Lead tasking): T3.2 approval was received. This report does not claim the PR was created or merged, and no T3.3 work was started.
 
 ## 11. Final status
 
-**VERIFIED — IMPLEMENTATION AND REQUESTED TEST RUNS FINISHED; T3.2 NOT ACCEPTED OR MARKED COMPLETE.** The provisioning changes are implemented, focused tests and the full Maven suite passed, and this report is written. Independent verification/review and human Tech Lead acceptance remain outstanding; this execution stops here as requested.
+**PARTIAL — T3.2 branch and selective commit created and pushed successfully; PR creation is blocked because GitHub CLI is unavailable.** The corrected Javadoc is committed. The branch is based on updated `origin/main`, and unrelated work remains preserved. Manual PR creation is the outstanding action; no merge occurred.
 
 ## 12. Outstanding issues
 
-- **PENDING VERIFICATION**: Tester to independently verify the T3.2 requirements and tests before reading Developer conclusions, per `agent-reports/README.md`.
-- **PENDING VERIFICATION**: Reviewer to independently audit the code and design before reading the Architect, Developer or Tester reports, per `agent-reports/README.md`.
-- **PENDING VERIFICATION**: Human Tech Lead acceptance is not available and remains the only authority for accepting T3.2. No completion approval is claimed.
-- **NOT AVAILABLE**: Live production secrets-manager/environment integration and real-host startup were not verified.
+- **PENDING VERIFICATION**: Create the PR with base `main`, head `feature/T3.2-user-provisioning`, title `T3.2 — Single-user provisioning with BCrypt`, and the requested description. Manual compare URL: `https://github.com/pcfernandes/human-it-challenge/compare/main...feature/T3.2-user-provisioning?expand=1`.
+- **VERIFIED**: The unrelated modified file and four unrelated untracked report directories listed in Section 6 remain in the worktree, untouched.
+- **VERIFIED**: No tests were rerun for the Javadoc-only correction; the Tester reported 23 focused and 329 full-suite passing tests before that documentation change.
 
 ## 13. Handoff to next agent
 
-- **VERIFIED**: Developer report path: `agent-reports/T3.2/developer-report.md`.
-- **VERIFIED**: Test evidence recorded in Section 8: focused provisioning/security tests passed (19 tests); full Maven suite passed (329 tests).
-- **PENDING VERIFICATION**: Tester must perform independent verification before consulting this report. Reviewer must complete an independent audit before consulting the Architect, Developer or Tester conclusions.
-- **PENDING VERIFICATION**: Human Tech Lead must decide acceptance after test and review evidence. Do not treat these implementation/test results as approval or task completion.
+- **VERIFIED**: Branch: `feature/T3.2-user-provisioning`; base SHA: `c0c74de1faea1d3d443cdfbe48502fc72e3d664a`; feature commit: `bf2da5399301b3b9487984246efffd1eb6369e23`.
+- **VERIFIED**: Push succeeded to `origin/feature/T3.2-user-provisioning`. The feature commit contains 20 T3.2 files as enumerated in Section 6.
+- **PENDING VERIFICATION**: Create the requested PR manually using the compare URL in Section 12. Do not merge it.
+- **VERIFIED**: Developer execution report path: `agent-reports/T3.2/developer-report.md`; prior report retained at `agent-reports/T3.2/history/developer-002.md`.
