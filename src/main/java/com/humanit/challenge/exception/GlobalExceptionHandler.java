@@ -151,7 +151,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 ? ex.getReason()
                 : status.getReasonPhrase();
         ProblemDetail problem = buildProblem(status, status.getReasonPhrase(), detail, request);
-        return ResponseEntity.status(statusCode)
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(statusCode);
+        if (statusCode.value() == HttpStatus.UNAUTHORIZED.value()) {
+            response.header(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+        }
+        return response
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(problem);
     }
