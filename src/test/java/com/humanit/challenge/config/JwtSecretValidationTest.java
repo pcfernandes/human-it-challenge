@@ -29,8 +29,6 @@ class JwtSecretValidationTest {
     void prodWithoutSecretFailsStartup() { // T-M17
         Map<String, String> properties = StartupTestHarness.prodProperties();
         properties.remove("app.security.jwt.secret");
-        properties.remove("app.security.demo-user.username");
-        properties.remove("app.security.demo-user.password");
         Throwable failure = StartupTestHarness.tryRun(properties, "prod");
         assertThat(failure).as("startup must fail in prod without a secret").isNotNull();
         assertThat(StartupTestHarness.failureMessages(failure)).contains(PROPERTY_PREFIX);

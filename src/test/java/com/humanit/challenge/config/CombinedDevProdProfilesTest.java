@@ -1,6 +1,7 @@
 package com.humanit.challenge.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -13,12 +14,12 @@ import org.springframework.core.env.PropertySource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 /**
- * T-M20 — combined {@code dev,prod} activation (behavior documentation, not a guard):
- * with no technical guard in the approved Revision 3 architecture, both profile files
- * load and the dev-gated demo-user configuration registers. This documents finding F-03
- * and the accepted residual-risk boundary (proposal Sections 9 and B.1, T-M20).
+ * Combined {@code dev,prod} activation loads both profile files but must not register the
+ * development demo user; the production account remains the sole configured principal.
  */
 @SpringBootTest
 @ActiveProfiles({"dev", "prod"})
@@ -32,6 +33,9 @@ class CombinedDevProdProfilesTest {
 
     @Autowired
     private ConfigurableApplicationContext context;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     @Test
     void documentsF03BothProfileFilesLoad() {
@@ -52,5 +56,7 @@ class CombinedDevProdProfilesTest {
         // demo-user bean from registering under combined dev,prod activation.
         assertThat(context.getBeansOfType(AppDemoUserProperties.class)).isEmpty();
         assertThat(context.getEnvironment().getActiveProfiles()).containsExactly("dev", "prod");
+        assertThatThrownBy(() -> userDetailsService.loadUserByUsername(StartupTestHarness.DEMO_USERNAME))
+                .isInstanceOf(UsernameNotFoundException.class);
     }
 }

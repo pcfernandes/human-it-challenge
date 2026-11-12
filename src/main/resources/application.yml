@@ -5,8 +5,8 @@
 #
 # Secrets are NEVER committed anywhere. Supply them by environment:
 #   dev/prod: APP_SECURITY_JWT_SECRET            (required, standard Base64, >= 32 decoded bytes)
-#   dev only: APP_SECURITY_DEMO_USER_USERNAME
-#             APP_SECURITY_DEMO_USER_PASSWORD
+#   dev only: APP_SECURITY_DEMO_USER_USERNAME and APP_SECURITY_DEMO_USER_PASSWORD_HASH
+#   prod:     APP_SECURITY_USER_USERNAME and APP_SECURITY_USER_PASSWORD_HASH
 #
 # Common, environment-neutral persistence/migration settings (T1.4).
 # Datasource URLs/credentials are profile-specific (see application-dev.yml /

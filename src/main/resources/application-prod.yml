@@ -1,6 +1,7 @@
 # Production profile. Must be activated explicitly via SPRING_PROFILES_ACTIVE=prod.
 # Datasource: PostgreSQL from environment variables (never committed).
-# No secrets here - env only (APP_SECURITY_JWT_SECRET required via relaxed binding).
+# No secrets here - env only (APP_SECURITY_JWT_SECRET, APP_SECURITY_USER_USERNAME and
+# APP_SECURITY_USER_PASSWORD_HASH required via relaxed binding).
 # Demo-user settings are deliberately ABSENT in this profile.
 spring:
   datasource:

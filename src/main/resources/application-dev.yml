@@ -1,7 +1,7 @@
 # Development profile (applied automatically when no explicit profile is set).
 # Datasource: H2 in-memory. No secrets here - env only:
 #   APP_SECURITY_JWT_SECRET (required), APP_SECURITY_DEMO_USER_USERNAME and
-#   APP_SECURITY_DEMO_USER_PASSWORD (required because the dev demo-user properties
+#   APP_SECURITY_DEMO_USER_PASSWORD_HASH (required because the dev demo-user properties
 #   are validated and dev bindings fail fast when absent).
 spring:
   datasource:

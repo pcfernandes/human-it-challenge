@@ -32,8 +32,8 @@ This repository is a Java 21 / Spring Boot REST API for managing **Clients** and
 | Variable | Required | Purpose |
 |---|---|---|
 | `APP_SECURITY_JWT_SECRET` | Yes | JWT signing secret. Standard Base64, at least 32 decoded bytes. Never commit. |
-| `APP_SECURITY_DEMO_USER_USERNAME` | Yes | Development demo user username. The dev demo-user properties are validated; missing value fails startup. |
-| `APP_SECURITY_DEMO_USER_PASSWORD` | Yes | Development demo user password. Required for the same reason. |
+| `APP_SECURITY_DEMO_USER_USERNAME` | Yes | Development demo user username. |
+| `APP_SECURITY_DEMO_USER_PASSWORD_HASH` | Yes | BCrypt hash of the development demo user's password; plaintext is never configured. |
 
 ### Production (required)
 
@@ -44,6 +44,8 @@ This repository is a Java 21 / Spring Boot REST API for managing **Clients** and
 | `SPRING_DATASOURCE_USERNAME` | Yes | PostgreSQL username. |
 | `SPRING_DATASOURCE_PASSWORD` | Yes | PostgreSQL password. |
 | `APP_SECURITY_JWT_SECRET` | Yes | JWT signing secret (Base64, at least 32 decoded bytes). |
+| `APP_SECURITY_USER_USERNAME` | Yes | Production account username, supplied through the environment/secrets manager. |
+| `APP_SECURITY_USER_PASSWORD_HASH` | Yes | Production account BCrypt hash, supplied through the environment/secrets manager. |
 
 Demo-user settings are intentionally absent in `prod`; no demonstration credentials are provisioned in production.
 
@@ -75,7 +77,7 @@ $bytes = New-Object byte[] 32
 $env:APP_SECURITY_JWT_SECRET = [Convert]::ToBase64String($bytes)
 $env:SPRING_PROFILES_ACTIVE = "dev"
 $env:APP_SECURITY_DEMO_USER_USERNAME = "demo"
-$env:APP_SECURITY_DEMO_USER_PASSWORD = "<demo-password>"
+$env:APP_SECURITY_DEMO_USER_PASSWORD_HASH = "<bcrypt-hash-from-a-secure-provisioning-process>"
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -91,6 +93,8 @@ $env:SPRING_DATASOURCE_URL = "jdbc:postgresql://<host>:5432/<database>"
 $env:SPRING_DATASOURCE_USERNAME = "<username>"
 $env:SPRING_DATASOURCE_PASSWORD = "<password>"
 $env:APP_SECURITY_JWT_SECRET = "<base64-secret-with-at-least-32-decoded-bytes>"
+$env:APP_SECURITY_USER_USERNAME = "<username>"
+$env:APP_SECURITY_USER_PASSWORD_HASH = "<bcrypt-hash-from-a-secure-provisioning-process>"
 .\mvnw.cmd spring-boot:run
 ```
 

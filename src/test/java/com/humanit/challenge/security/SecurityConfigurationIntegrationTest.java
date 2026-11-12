@@ -1,6 +1,7 @@
 package com.humanit.challenge.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -15,6 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -33,6 +39,15 @@ class SecurityConfigurationIntegrationTest {
 
     @Autowired
     private JwtEncoder jwtEncoder;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @DynamicPropertySource
     static void supplyExternals(DynamicPropertyRegistry registry) {
@@ -81,7 +96,22 @@ class SecurityConfigurationIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
 
         assertThat(body).contains("Unauthorized", "Authentication is required")
-                .doesNotContain(StartupTestHarness.VALID_SECRET_32_BYTES, "test-demo-password", "accessToken");
+                .doesNotContain(StartupTestHarness.VALID_SECRET_32_BYTES,
+                        StartupTestHarness.TEST_PASSWORD_INPUT, StartupTestHarness.TEST_BCRYPT_HASH, "accessToken");
+    }
+
+    @Test
+    void demoUserCredentialMatchesWithBcryptAndRejectsWrongPassword() {
+        String storedHash = userDetailsService.loadUserByUsername(StartupTestHarness.DEMO_USERNAME).getPassword();
+        assertThat(storedHash).startsWith("$2");
+        assertThat(passwordEncoder.matches(StartupTestHarness.TEST_PASSWORD_INPUT, storedHash)).isTrue();
+        assertThat(passwordEncoder.matches("incorrect-test-input", storedHash)).isFalse();
+
+        assertThat(authenticationManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(
+                StartupTestHarness.DEMO_USERNAME, StartupTestHarness.TEST_PASSWORD_INPUT)).isAuthenticated()).isTrue();
+        assertThatThrownBy(() -> authenticationManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(
+                StartupTestHarness.DEMO_USERNAME, "incorrect-test-input")))
+                .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test

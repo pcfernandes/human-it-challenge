@@ -8,6 +8,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 
 import com.humanit.challenge.HumanItChallengeApplication;
@@ -32,21 +33,25 @@ public final class StartupTestHarness {
     public static final String MALFORMED_SECRET = "not!valid";
 
     public static final String DEMO_USERNAME = "test-demo-username";
-    public static final String DEMO_PASSWORD = "test-demo-password";
+    public static final String PRODUCTION_USERNAME = "test-production-username";
+    public static final String TEST_PASSWORD_INPUT = "verification-only-input";
+    public static final String TEST_BCRYPT_HASH = new BCryptPasswordEncoder().encode(TEST_PASSWORD_INPUT);
 
     private StartupTestHarness() {
     }
 
-    /** Registers valid dev-required externals (secret + demo-user credentials) for @SpringBootTest contexts. */
+    /** Registers valid dev-required externals (secret + demo-user BCrypt credentials) for @SpringBootTest contexts. */
     public static void supplyDevExternals(DynamicPropertyRegistry registry) {
         registry.add("app.security.jwt.secret", () -> VALID_SECRET_32_BYTES);
         registry.add("app.security.demo-user.username", () -> DEMO_USERNAME);
-        registry.add("app.security.demo-user.password", () -> DEMO_PASSWORD);
+        registry.add("app.security.demo-user.password-hash", () -> TEST_BCRYPT_HASH);
     }
 
-    /** Registers the prod-required externals (secret only) for @SpringBootTest contexts. */
+    /** Registers production externals, including a BCrypt hash, for @SpringBootTest contexts. */
     public static void supplyProdExternals(DynamicPropertyRegistry registry) {
         registry.add("app.security.jwt.secret", () -> VALID_SECRET_32_BYTES);
+        registry.add("app.security.user.username", () -> PRODUCTION_USERNAME);
+        registry.add("app.security.user.password-hash", () -> TEST_BCRYPT_HASH);
         // T1.4: prod datasource is required; tests run against an in-memory H2 override
         // so no running PostgreSQL instance is needed for configuration verification.
         registry.add("SPRING_DATASOURCE_URL", () -> "jdbc:h2:mem:humanit-prod-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
@@ -65,10 +70,12 @@ public final class StartupTestHarness {
         return propertyMap(secretOverride);
     }
 
-    /** Prod-start environment: only the secret is provided (demo-user keys are dev-only). */
+    /** Prod-start environment: production account values are provided; demo-user keys are dev-only. */
     public static Map<String, String> prodProperties() {
         Map<String, String> map = new LinkedHashMap<>();
         map.put("app.security.jwt.secret", VALID_SECRET_32_BYTES);
+        map.put("app.security.user.username", PRODUCTION_USERNAME);
+        map.put("app.security.user.password-hash", TEST_BCRYPT_HASH);
         // T1.4: prod datasource is required; tests run against an in-memory H2 override.
         map.put("SPRING_DATASOURCE_URL", "jdbc:h2:mem:humanit-prod-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
         map.put("SPRING_DATASOURCE_USERNAME", "sa");
@@ -109,7 +116,7 @@ public final class StartupTestHarness {
         Map<String, String> map = new LinkedHashMap<>();
         map.put("app.security.jwt.secret", secret);
         map.put("app.security.demo-user.username", DEMO_USERNAME);
-        map.put("app.security.demo-user.password", DEMO_PASSWORD);
+        map.put("app.security.demo-user.password-hash", TEST_BCRYPT_HASH);
         return map;
     }
 
