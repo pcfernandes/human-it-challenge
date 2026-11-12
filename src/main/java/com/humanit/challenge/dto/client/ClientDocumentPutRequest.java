@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * One Document entry inside {@code ClientPutRequest.documents}.
@@ -19,6 +20,8 @@ import jakarta.validation.constraints.Size;
  * {@code id}/{@code version} pair is invalid. Ownership resolution, unknown-ID handling
  * and version checking are performed later by the service layer, not here.
  */
+@Schema(description = "Nested Document entry for Client PUT. Existing Documents supply both id and nonnegative version; "
+        + "new Documents supply neither. number and expirationDate are required. Omitted Documents are preserved.")
 public class ClientDocumentPutRequest {
 
     private Long id;
@@ -27,6 +30,7 @@ public class ClientDocumentPutRequest {
     private Long version;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 100, description = "Required nonblank, globally unique Document number.")
     @Size(max = 100)
     private String number;
 

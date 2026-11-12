@@ -5,15 +5,19 @@ import java.time.LocalDate;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Request contract for creating a Document under an existing Client
  * ({@code POST /clients/{clientId}/documents}). The expected Client version travels in
  * the {@code X-Client-Version} header and is therefore not part of this body.
  */
+@Schema(description = "Document creation input. number is required/nonblank (maximum 100); expirationDate is required "
+        + "as an ISO-8601 date; description is optional (maximum 1000). Expired Documents are accepted.")
 public class DocumentCreateRequest {
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 100, description = "Required nonblank, globally unique Document number.")
     @Size(max = 100)
     private String number;
 

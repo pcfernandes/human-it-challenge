@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Request contract for a partial update of a Client ({@code PATCH /clients/{id}}).
@@ -26,21 +27,28 @@ import jakarta.validation.constraints.Size;
  * through {@link ClientDocumentPatchRequest}. No implicit Document deletion or ownership
  * transfer is expressed by this contract.
  */
+@Schema(description = "Partial Client update input. Omitted fields remain unchanged. Required scalar nulls are invalid. "
+        + "Omitted/empty documents preserves existing Documents; documents:null is invalid.")
 public class ClientPatchRequest {
 
     @PatchRequired
+    @Schema(implementation = String.class, minLength = 1, maxLength = 100, description = "Optional patch value; omitted preserves the current value, null/blank is invalid.")
     private PatchValue<@NotBlank @Size(max = 100) String> firstName = PatchValue.absent();
 
     @PatchRequired
+    @Schema(implementation = String.class, minLength = 1, maxLength = 100, description = "Optional patch value; omitted preserves the current value, null/blank is invalid.")
     private PatchValue<@NotBlank @Size(max = 100) String> lastName = PatchValue.absent();
 
     @PatchRequired
+    @Schema(implementation = String.class, minLength = 1, maxLength = 50, description = "Optional patch value; omitted preserves the current value, null/blank is invalid.")
     private PatchValue<@NotBlank @Size(max = 50) String> taxIdentifier = PatchValue.absent();
 
     @PatchRequired
+    @Schema(implementation = String.class, format = "email", minLength = 1, maxLength = 255, description = "Optional patch value; omitted preserves the current value, null/blank or invalid email is rejected.")
     private PatchValue<@NotBlank @Email @Size(max = 255) String> email = PatchValue.absent();
 
     @PatchRequired
+    @Schema(implementation = String.class, minLength = 1, maxLength = 50, description = "Optional patch value; omitted preserves the current value, null/blank is invalid.")
     private PatchValue<@NotBlank @Size(max = 50) String> phoneNumber = PatchValue.absent();
 
     @NotNull
@@ -48,6 +56,7 @@ public class ClientPatchRequest {
     private Long version;
 
     @PatchRequired
+    @Schema(implementation = ClientDocumentPatchRequest[].class, description = "Optional patch value; omitted or an empty array preserves Documents, null is invalid.")
     private PatchValue<List<@NotNull @Valid ClientDocumentPatchRequest>> documents = PatchValue.absent();
 
     public ClientPatchRequest() {

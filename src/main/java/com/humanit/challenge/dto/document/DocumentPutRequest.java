@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Request contract for a full replacement of a Document's editable fields
@@ -13,6 +14,8 @@ import jakarta.validation.constraints.Size;
  * version is required in the body; the expected Client version travels in the
  * {@code X-Client-Version} header. {@code description} is optional and may be null.
  */
+@Schema(description = "Full replacement input for editable Document fields. Requires nonnegative Document version, "
+        + "nonblank number (maximum 100), and expirationDate. description is optional (maximum 1000).")
 public class DocumentPutRequest {
 
     @NotNull
@@ -20,6 +23,7 @@ public class DocumentPutRequest {
     private Long version;
 
     @NotBlank
+    @Schema(minLength = 1, maxLength = 100, description = "Required nonblank, globally unique Document number.")
     @Size(max = 100)
     private String number;
 

@@ -8,6 +8,10 @@ import com.humanit.challenge.dto.auth.LoginRequest;
 import com.humanit.challenge.dto.auth.TokenResponse;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Authentication", description = "Public login operation for obtaining a JWT access token.")
 public class AuthController {
 
     private static final String INVALID_CREDENTIALS = "Invalid username or password.";
@@ -42,6 +47,13 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Log in", description = "Authenticates the configured user and returns a signed HS256 JWT. "
+            + "This operation is public and does not require a bearer token. Invalid credentials return a generic 401.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "JWT issued"),
+            @ApiResponse(responseCode = "400", description = "Username or password missing (Problem Details)"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials (Problem Details)")
+    })
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
         Authentication authentication;
         try {
