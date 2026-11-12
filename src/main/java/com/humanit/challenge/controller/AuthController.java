@@ -52,7 +52,8 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "JWT issued"),
             @ApiResponse(responseCode = "400", description = "Username or password missing (Problem Details)"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials (Problem Details)")
+            @ApiResponse(responseCode = "401", description = "Invalid credentials (Problem Details)"),
+            @ApiResponse(responseCode = "500", description = "Unexpected server error (Problem Details)")
     })
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
         Authentication authentication;

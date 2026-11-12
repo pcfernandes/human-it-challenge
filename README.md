@@ -1,57 +1,29 @@
-# Human IT Challenge — REST API for Managing Clients and Documents
+# Human IT Challenge — Clients and Documents REST API
 
-## Purpose and Current Scope
+## Purpose and current capabilities
 
-This repository is a Java 21 / Spring Boot REST API for managing **Clients** and their associated **Documents**. It prioritizes maintainability, correctness, transactional integrity, security, automated testing and clear documentation.
+This Java 21 / Spring Boot application provides a REST API for managing Clients and their associated Documents. It includes authenticated Client CRUD, nested Document CRUD, input validation, Flyway-managed persistence, pagination, transactional updates, optimistic locking, and RFC 9457 Problem Details responses.
 
-**Current state (Phase 1 baseline only):** the application boots, is correctly configured for `dev` and `prod` profiles, has a persistence and Flyway baseline, and ships cross-cutting scaffolding (RFC 9457 Problem Details, minimal OpenAPI bean, standard logging). There are **no business endpoints, entities, controllers or repositories** yet — those arrive in Phase 2. There is no authentication enforcement, no Docker configuration and no React frontend.
+## Technology and prerequisites
 
-## Technology Baseline
+- Java 21 JDK (verify with `java -version`; set `JAVA_HOME` to that JDK for the wrapper).
+- Maven Wrapper 3.3.4, configured to download Maven 3.10.0. A separate Maven installation is not required. The first wrapper run needs network access.
+- Spring Boot 3.5.16, H2 for local development, and PostgreSQL configured for production.
+- PowerShell examples below assume the repository root as the current directory.
 
-| Component | Version / value |
+## Local development with H2
+
+The default profile is `dev`, which uses an in-memory H2 database. Set these required environment variables before starting:
+
+| Variable | Value |
 |---|---|
-| Java | 21 (LTS) — enforced at build time by Maven Enforcer `requireJavaVersion [21,22)` |
-| Spring Boot | 3.5.16 (parent POM) |
-| Maven | 3.10.0 or later — enforced by `requireMavenVersion [3.10.0,)` |
-| Maven Wrapper | 3.3.4, pinned to Apache Maven 3.10.0 |
-| Database (dev) | H2 in-memory |
-| Database (prod) | PostgreSQL (from environment variables) |
-| Schema management | Flyway (enabled), Hibernate `ddl-auto: validate` |
+| `APP_SECURITY_JWT_SECRET` | Standard Base64 secret decoding to at least 32 bytes. Generate a fresh value; do not commit it. |
+| `APP_SECURITY_DEMO_USER_USERNAME` | A username you choose. |
+| `APP_SECURITY_DEMO_USER_PASSWORD_HASH` | A BCrypt hash for the password you choose, provisioned securely. This is not the plaintext password. |
 
-## Prerequisites
+### Generate a secure Base64 JWT secret
 
-- **JDK 21** (LTS). Verify with `java -version`.
-- **Maven is not required globally** — use the committed Maven Wrapper (`mvnw.cmd` on Windows).
-- **Windows PowerShell** is the verified shell for the commands in this document. Other shells require adaptation.
-- Network access on first run so the wrapper can download Maven 3.10.0.
-
-## Configuration and Environment Variables
-
-### Development (required)
-
-| Variable | Required | Purpose |
-|---|---|---|
-| `APP_SECURITY_JWT_SECRET` | Yes | JWT signing secret. Standard Base64, at least 32 decoded bytes. Never commit. |
-| `APP_SECURITY_DEMO_USER_USERNAME` | Yes | Development demo user username. |
-| `APP_SECURITY_DEMO_USER_PASSWORD_HASH` | Yes | BCrypt hash of the development demo user's password; plaintext is never configured. |
-
-### Production (required)
-
-| Variable | Required | Purpose |
-|---|---|---|
-| `SPRING_PROFILES_ACTIVE` | Yes | Must be `prod`. |
-| `SPRING_DATASOURCE_URL` | Yes | PostgreSQL JDBC URL. |
-| `SPRING_DATASOURCE_USERNAME` | Yes | PostgreSQL username. |
-| `SPRING_DATASOURCE_PASSWORD` | Yes | PostgreSQL password. |
-| `APP_SECURITY_JWT_SECRET` | Yes | JWT signing secret (Base64, at least 32 decoded bytes). |
-| `APP_SECURITY_USER_USERNAME` | Yes | Production account username, supplied through the environment/secrets manager. |
-| `APP_SECURITY_USER_PASSWORD_HASH` | Yes | Production account BCrypt hash, supplied through the environment/secrets manager. |
-
-Demo-user settings are intentionally absent in `prod`; no demonstration credentials are provisioned in production.
-
-## Generating a JWT Secret (PowerShell)
-
-Generates 32 random bytes (256 bits) and Base64-encodes them. The value is generated locally and is never committed.
+This PowerShell example generates 32 random bytes (256 bits) and stores only the Base64 value in the current process environment:
 
 ```powershell
 $bytes = New-Object byte[] 32
@@ -59,118 +31,79 @@ $bytes = New-Object byte[] 32
 $env:APP_SECURITY_JWT_SECRET = [Convert]::ToBase64String($bytes)
 ```
 
-Optional, non-leaking verification (prints `32` or more):
+### Start the application
+
+Replace both quoted placeholders with your own username and securely generated BCrypt hash. Do not use these placeholders as credentials or commit real credentials. The matching plaintext password is required only for the login request below.
 
 ```powershell
-[Convert]::FromBase64String($env:APP_SECURITY_JWT_SECRET).Length
-```
-
-For production, generate an independent secret on the target host or via a secrets manager using the same method.
-
-## Local Development Startup (PowerShell, from project root)
-
-The development profile is selected **explicitly** so that a `SPRING_PROFILES_ACTIVE=prod` value inherited from the environment cannot accidentally activate production configuration.
-
-```powershell
-$bytes = New-Object byte[] 32
-[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
-$env:APP_SECURITY_JWT_SECRET = [Convert]::ToBase64String($bytes)
 $env:SPRING_PROFILES_ACTIVE = "dev"
-$env:APP_SECURITY_DEMO_USER_USERNAME = "demo"
-$env:APP_SECURITY_DEMO_USER_PASSWORD_HASH = "<bcrypt-hash-from-a-secure-provisioning-process>"
+$env:APP_SECURITY_DEMO_USER_USERNAME = "<your-username>"
+$env:APP_SECURITY_DEMO_USER_PASSWORD_HASH = "<BCrypt-hash-for-your-password>"
 .\mvnw.cmd spring-boot:run
 ```
 
-- If any required variable is missing or invalid, startup fails fast before the web server starts; the failure names the property but never leaks the secret value.
-- The application starts on the default Spring Boot port (8080) unless overridden by standard Spring Boot configuration.
-- No manual database setup is required (H2 in-memory).
+The application listens on port 8080 by default. No database setup is needed for the in-memory H2 profile.
 
-## Production Configuration Example (PowerShell)
+## Database and migrations
 
-```powershell
-$env:SPRING_PROFILES_ACTIVE = "prod"
-$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://<host>:5432/<database>"
-$env:SPRING_DATASOURCE_USERNAME = "<username>"
-$env:SPRING_DATASOURCE_PASSWORD = "<password>"
-$env:APP_SECURITY_JWT_SECRET = "<base64-secret-with-at-least-32-decoded-bytes>"
-$env:APP_SECURITY_USER_USERNAME = "<username>"
-$env:APP_SECURITY_USER_PASSWORD_HASH = "<bcrypt-hash-from-a-secure-provisioning-process>"
-.\mvnw.cmd spring-boot:run
-```
+Flyway runs migrations from `classpath:db/migration`; Hibernate uses `ddl-auto: validate` and does not create or alter the schema. `V1__baseline.sql` is a comment-only baseline migration. `V2__create_clients_and_documents.sql` creates the Client and Document tables, uniqueness constraints, Client foreign key with cascade deletion, and Client index. Spring SQL initialization is disabled.
 
-H2 Console is not configured in `prod`. PostgreSQL integration against a real PostgreSQL instance is **not verified in Phase 1**; the production datasource configuration is validated only through configuration inspection and the H2-overridden test harness. Configuration presence must not be read as verified integration.
+The `prod` profile is configured for PostgreSQL using `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`, together with `APP_SECURITY_JWT_SECRET`, `APP_SECURITY_USER_USERNAME`, and `APP_SECURITY_USER_PASSWORD_HASH`. Supply production values through a secure environment/secrets mechanism. PostgreSQL configuration exists, but integration against a real PostgreSQL instance has not yet been verified.
 
-## H2 and PostgreSQL Profile Differences
+## Authentication and API usage
 
-| Aspect | `dev` | `prod` |
-|---|---|---|
-| Datasource | H2 in-memory (`jdbc:h2:mem:humanit;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE`), user `sa`, empty password | PostgreSQL from `SPRING_DATASOURCE_URL` / `USERNAME` / `PASSWORD` |
-| Driver | `org.h2.Driver` | `org.postgresql.Driver` |
-| H2 Console | Enabled, path `/h2-console` | Not configured |
-| Demo user | Configured under `dev & !prod` (requires username/password env vars) | Absent |
-| Logging | `com.humanit.challenge: DEBUG` | root `WARN`, `com.humanit.challenge: INFO` |
-
-Common to both: `spring.jpa.hibernate.ddl-auto: validate`, Flyway enabled (`classpath:db/migration`), `spring.sql.init.mode: never`, pagination defaults (`default-page: 0`, `default-page-size: 20`, `max-page-size: 100`), JWT expiration default 60 minutes.
-
-## Database and Flyway Baseline
-
-- **Development:** H2 in-memory database. No manual database setup is required.
-- **Production:** PostgreSQL, configured entirely from `SPRING_DATASOURCE_*`.
-- **Flyway:** enabled in both profiles; migrations are loaded from `classpath:db/migration`.
-- **Baseline migration:** `V1__baseline.sql` is comment-only and is recorded as schema version 1. It intentionally creates no tables; business schema arrives in Phase 2.
-- **Hibernate:** `ddl-auto: validate` in common configuration. Hibernate validates the schema but never creates or alters tables; Flyway owns schema changes.
-- **SQL initialization:** `spring.sql.init.mode: never` — Spring Boot does not run `schema.sql`/`data.sql`.
-- **H2 Console:** configured only in `dev`, path `/h2-console`. It is also active under combined `dev,prod` activation because the `dev` profile is active.
-
-**Reachability caveat:** Spring Security is on the classpath and no `SecurityFilterChain` is configured yet, so H2 Console and Swagger UI access may require authentication and may be affected by default frame/CSRF settings. Do not treat them as publicly accessible in Phase 1. Security configuration is addressed in Phase 3.
-
-## RFC 9457 Problem Details Infrastructure
-
-A `@RestControllerAdvice` (`GlobalExceptionHandler`) provides RFC 9457 Problem Details (`application/problem+json`) responses for framework and unexpected errors: validation failures (400), malformed body (400), type mismatch (400), not found (404), method not allowed (405), constraint violations (400), `ResponseStatusException` (status preserved) and a catch-all 500. No stack traces, exception class names, SQL details, secrets or rejected values are copied to a response body; unexpected exceptions are logged server-side only.
-
-Deferred (not yet implemented): 409 conflict handlers, 401/403 security mappings, problem-type URIs, bearer OpenAPI security scheme, structured logging.
-
-## OpenAPI Configuration and Limitations
-
-`OpenApiConfig` registers a minimal `OpenAPI` bean with application title/version/description. The `springdoc-openapi-starter-webmvc-ui` dependency is present, so the OpenAPI JSON and Swagger UI endpoints are available from the dependency, but **there are no business endpoints yet**, and **reachability under default Spring Security is not verified** in Phase 1. Authentication is not yet represented in OpenAPI (deferred to Phase 3/4).
-
-## Logging Baseline
-
-A common console logging pattern is configured in `application.yml`:
-
-```
-%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n
-```
-
-Log levels: `com.humanit.challenge: DEBUG` in dev; root `WARN` and `com.humanit.challenge: INFO` in prod.
-
-## Build and Test Commands (PowerShell, from project root)
+`POST /auth/login` is public. Supply the configured username and its corresponding plaintext password; the application verifies it against the configured BCrypt hash and returns an access token. The following PowerShell example uses placeholders only:
 
 ```powershell
-# Full build and test suite (recommended baseline check)
+$login = Invoke-RestMethod -Method Post -Uri 'http://localhost:8080/auth/login' `
+  -ContentType 'application/json' `
+  -Body (@{ username = '<your-username>'; password = '<your-password>' } | ConvertTo-Json)
+```
+
+Use the returned token as a bearer token for protected endpoints. This performs an authenticated, paginated Client list request:
+
+```powershell
+Invoke-RestMethod -Uri 'http://localhost:8080/api/clients?page=0&size=20' `
+  -Headers @{ Authorization = "Bearer $($login.accessToken)" }
+```
+
+The placeholder password must match the password used to produce the configured BCrypt hash. Do not put real credentials or tokens in source control.
+
+### Endpoint overview
+
+- Login: `POST /auth/login`.
+- Client CRUD: `POST`, `GET` (collection and `/{id}`), `PUT`, `PATCH`, and `DELETE` under `/api/clients`.
+- Nested Document CRUD: `POST`, `GET` (collection and `/{documentId}`), `PUT`, `PATCH`, and `DELETE` under `/api/clients/{clientId}/documents`.
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`.
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`.
+
+Login and Swagger/OpenAPI paths are public; Client and Document operations require a valid JWT bearer token.
+
+## API behavior and technical decisions
+
+- Client and Document list endpoints use zero-based `page` and `size` parameters (defaults `0` and `20`), sort by ID ascending, return pagination metadata, and reject page sizes above 100.
+- `PUT` updates all editable scalar fields. For a Client, omitted or empty `documents` preserves existing Documents; explicit `documents: null` is invalid. `PATCH` changes only supplied values; omitted values remain unchanged. Neither update implicitly deletes Documents, and Document ownership cannot be transferred.
+- Client and Document entities use version-based optimistic locking. Client PUT/PATCH requests supply the expected Client version in the body. Document create/update/delete operations require the expected `X-Client-Version`; Document PUT/PATCH also supply the Document version in the body, while Document DELETE requires `X-Document-Version` as well. Client DELETE requires `X-Client-Version`. Stale versions return HTTP 409; invalid or missing required versions return HTTP 400. Document changes increment the parent Client version.
+- Related Client/Document changes and deletion are transactional so a failed operation does not leave a partial aggregate update. Deleting a Client deletes its owned Documents; deleting a Document removes only that Document.
+- Authentication is stateless JWT bearer authentication using HS256. Password verification uses BCrypt, and signing material and account settings are externalized.
+- Client/Document application errors use RFC 9457 Problem Details (`application/problem+json`), including validation, not-found, conflict, authentication, and unexpected-error responses. Responses do not expose secrets, stack traces, or internal SQL details.
+
+## Build and tests
+
+Run from the repository root in PowerShell:
+
+```powershell
 .\mvnw.cmd clean verify
-
-# Tests only
 .\mvnw.cmd test
-
-# Package without running tests (use only when explicitly intended)
-.\mvnw.cmd -DskipTests package
 ```
 
-- The Maven Wrapper downloads Maven 3.10.0 automatically on first use.
-- `clean verify` runs compilation, tests, packaging and the Maven Enforcer baseline checks.
-- No global Maven installation is required.
-- Test counts drift between runs; record the actual count from your own run. The last verified full run (T1.5) reported 41 tests.
+`clean verify` builds and runs verification, including tests and configured Maven Enforcer checks. `test` runs the test phase. Both use the checked-in wrapper and do not require a global Maven installation.
 
-## Known Limitations and Deferred Work
+## Limitations
 
-- No business endpoints, entities, repositories or controllers exist yet (Phase 2).
-- Authentication is not enforced; JWT infrastructure is only configured/externalized (Phase 3).
-- H2 Console and Swagger UI reachability under default Spring Security is not verified (Phase 3).
-- PostgreSQL integration against a real PostgreSQL instance is not verified (Phase 5).
-- No Dockerfile or Compose configuration exists yet (Phase 5).
-- No React frontend exists.
-- Deferred from T1.5: 409 conflict handlers, 401/403 mappings, problem-type URIs, bearer OpenAPI security scheme, structured logging, global/object-level constraint violation mapping.
+- A Dockerfile and Docker Compose configuration have not yet been implemented; no container startup commands are available.
+- PostgreSQL configuration exists, but integration against a real PostgreSQL instance is not yet verified.
+- The application has no registration endpoint, roles/permissions, or refresh-token flow; it supports one configured account at a time.
 
 ## Changelog
 

@@ -210,7 +210,7 @@ Implement the complete Client and Document domain behavior, including CRUD, vali
 
 #### T2.3 — Client CRUD endpoints
 
-- **In scope:** `POST /clients`, `GET /clients`, `GET /clients/{id}`, `PUT /clients/{id}`, `PATCH /clients/{id}`, `DELETE /clients/{id}`.
+- **In scope:** `POST /api/clients`, `GET /api/clients`, `GET /api/clients/{id}`, `PUT /api/clients/{id}`, `PATCH /api/clients/{id}`, `DELETE /api/clients/{id}`.
 - **Out of scope:** JWT enforcement (Phase 3).
 - **Developer:** Implement the Client REST resource/controller and the use-case-justified service/repository workflow with Resource -> Service -> Repository separation. The resource handles HTTP concerns and delegates application workflows to services; services own applicable business rules, orchestration, ownership enforcement and transaction boundaries. Do not introduce a placeholder or pass-through `ClientService`; add it only when justified by actual Client use cases.
 - **Tester:** Verify happy-path endpoint tests for each Client endpoint.
@@ -224,7 +224,7 @@ Implement the complete Client and Document domain behavior, including CRUD, vali
 
 #### T2.4 — Document CRUD endpoints
 
-- **In scope:** `POST /clients/{clientId}/documents`, `GET /clients/{clientId}/documents`, `GET /clients/{clientId}/documents/{documentId}`, `PUT /clients/{clientId}/documents/{documentId}`, `PATCH /clients/{clientId}/documents/{documentId}`, `DELETE /clients/{clientId}/documents/{documentId}`.
+- **In scope:** `POST /api/clients/{clientId}/documents`, `GET /api/clients/{clientId}/documents`, `GET /api/clients/{clientId}/documents/{documentId}`, `PUT /api/clients/{clientId}/documents/{documentId}`, `PATCH /api/clients/{clientId}/documents/{documentId}`, `DELETE /api/clients/{clientId}/documents/{documentId}`.
 - **Out of scope:** Document transfer between Clients.
 - **Developer:** Implement the nested Document REST resource/controller and the use-case-justified service/repository workflow with Resource -> Service -> Repository separation. The resource handles HTTP concerns and delegates application workflows to services; services own applicable business rules, ownership enforcement, orchestration and transaction boundaries. Do not introduce a placeholder or pass-through `DocumentService`; add it only when justified by actual Document use cases.
 - **Tester:** Verify happy-path endpoint tests for each Document endpoint.
@@ -286,8 +286,8 @@ Implement the complete Client and Document domain behavior, including CRUD, vali
   - Client creation with Documents is atomic.
   - Client update with Documents is atomic.
   - Client deletion with Documents is atomic.
-  - DELETE `/clients/{id}` requires the `X-Client-Version` header.
-  - DELETE `/clients/{clientId}/documents/{documentId}` requires both `X-Client-Version` and `X-Document-Version` headers.
+  - DELETE `/api/clients/{id}` requires the `X-Client-Version` header.
+  - DELETE `/api/clients/{clientId}/documents/{documentId}` requires both `X-Client-Version` and `X-Document-Version` headers.
   - Missing or invalid version headers on DELETE return HTTP 400.
   - Stale versions on DELETE return HTTP 409.
   - Deletion and version checks are atomic.

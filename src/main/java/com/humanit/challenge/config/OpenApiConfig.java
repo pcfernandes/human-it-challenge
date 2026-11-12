@@ -53,6 +53,7 @@ public class OpenApiConfig {
 
             markNonBlankStrings(openApi, "ClientCreateRequest",
                     "firstName", "lastName", "taxIdentifier", "email", "phoneNumber");
+            markNonBlankStrings(openApi, "LoginRequest", "username", "password");
             markNonBlankStrings(openApi, "ClientPutRequest",
                     "firstName", "lastName", "taxIdentifier", "email", "phoneNumber");
             markNonBlankStrings(openApi, "ClientDocumentPutRequest", "number");
