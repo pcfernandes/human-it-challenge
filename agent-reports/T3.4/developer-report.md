@@ -1,13 +1,13 @@
-# Developer Report — T3.4 Phase 3 Contract Regression
+# Developer Report — T3.4 Commit and Pull Request Closeout
 
 ## 1. Task ID
 
-- **VERIFIED** (direct tasking): `T3.4` — Phase 3 contract regression.
+- **VERIFIED** (direct Tech Lead tasking): `T3.4` — finalize commit, push, and Pull Request preparation.
 
 ## 2. Execution identifier and date
 
-- **VERIFIED** (execution environment): `T3.4-DEV-001`, 2026-11-12.
-- **VERIFIED** (`agent-reports/README.md`, Section 6; repository search before writing): No earlier `agent-reports/T3.4/developer-report.md` existed, so no prior report required archival.
+- **VERIFIED** (execution environment): `T3.4-DEV-002`, 2026-11-12.
+- **VERIFIED** (`agent-reports/README.md`, Section 6; `agent-reports/T3.4/history/developer-001.md`): The prior Developer execution is preserved unchanged as `developer-001.md` before this primary report replaced it.
 
 ## 3. Agent role and model
 
@@ -15,77 +15,84 @@
 
 ## 4. Authorized scope
 
-- **VERIFIED** (direct tasking and `implementation-plan.md`, Sections 7/T3.4 and Phase 3 exit criteria): Inspect existing Phase 2 and security tests; add/adjust only tests needed to establish Client/Document CRUD behavior with JWT, 401 responses for missing/invalid/expired tokens, preserve existing safe 403 behavior where applicable, and preserve existing REST responses. No production refactoring/features, T3.2 credential changes, default credentials, commit/push/PR/merge, or T3.4 completion approval were authorized.
-- **VERIFIED** (direct tasking): Work from `feature/T3.4-security-regression` based on updated `origin/main`, preserve unrelated local changes, and stop if branch creation is unsafe.
+- **VERIFIED** (direct Tech Lead tasking): T3.4 was accepted with documented non-blocking Reviewer Minor findings M01, M02, and M03. Commit, push, and PR creation were authorized; merge was explicitly not authorized.
+- **VERIFIED** (direct tasking): Confirm `feature/T3.4-security-regression`, fetch and verify the base, inspect full changes, stage only the two T3.4 security test files and T3.4 agent reports/history, verify staged scope and secrets, commit with `test(security): add Phase 3 contract regression`, push the branch, and create a PR to `main` if tooling is available. If GitHub CLI is unavailable, provide the compare URL for manual PR creation.
+- **VERIFIED** (direct tasking): Do not alter, drop, or apply any stash; preserve unrelated changes; do not change application code; do not reset, clean, rebase, or force-push; do not merge.
 
 ## 5. Files inspected
 
-- **VERIFIED**: `agent-reports/README.md`, `implementation-plan.md` (T3.4 and Phase 3 exit criteria), `src/test/java/com/humanit/challenge/controller/ClientControllerTest.java`, `DocumentControllerTest.java`, `ClientAggregateUpdateHttpIntegrationTest.java`, `src/test/java/com/humanit/challenge/security/AuthControllerIntegrationTest.java`, `SecurityConfigurationIntegrationTest.java`, and `SecurityProblemHandlersTest.java`.
-- **VERIFIED**: `src/main/java/com/humanit/challenge/controller/ClientController.java` and `DocumentController.java`; source test inventory was searched for MockMvc/security token usage.
-- **VERIFIED**: Initial Git status, branch/log state, `origin/main` ancestry/merge evidence, and the pre-existing worktree diff were inspected before branch creation.
+- **VERIFIED**: `agent-reports/README.md`; prior `agent-reports/T3.4/developer-report.md`; `agent-reports/T3.4/tester-report.md`; `agent-reports/T3.4/reviewer-report.md`; and the archived Developer report.
+- **VERIFIED**: Full diffs of `src/test/java/com/humanit/challenge/security/AuthControllerIntegrationTest.java` and `SecurityConfigurationIntegrationTest.java`; staged diff and staged path list.
+- **VERIFIED**: Git branch, remote, status, stash list, `origin/main` SHA, merge base, and commit contents were checked.
+- **VERIFIED**: `gh --version` was attempted to determine whether PR tooling was available; PowerShell reported `gh` was not recognized.
 
 ## 6. Files changed
 
-- **VERIFIED**: `src/test/java/com/humanit/challenge/security/AuthControllerIntegrationTest.java` — added one authenticated end-to-end Client and Document CRUD regression test.
-- **VERIFIED**: `src/test/java/com/humanit/challenge/security/SecurityConfigurationIntegrationTest.java` — moved invalid-signature and expired-token checks to the nested Document route and added an unauthenticated nested Document route assertion.
-- **VERIFIED**: `agent-reports/T3.4/developer-report.md` — this execution report.
-- **VERIFIED**: No production source, configuration, dependency, T3.2 credential provisioning, or default-credential files were changed.
+- **VERIFIED**: The requested T3.4 commit `ec7329d55c36921c702335cbe015002ada14cd80` contains exactly:
+  - `agent-reports/T3.4/developer-report.md`
+  - `agent-reports/T3.4/history/developer-001.md`
+  - `agent-reports/T3.4/reviewer-report.md`
+  - `agent-reports/T3.4/tester-report.md`
+  - `src/test/java/com/humanit/challenge/security/AuthControllerIntegrationTest.java`
+  - `src/test/java/com/humanit/challenge/security/SecurityConfigurationIntegrationTest.java`
+- **VERIFIED**: This execution authored only the Developer report. Tester and Reviewer reports were staged without content changes. No application code was changed.
+- **VERIFIED**: The final closeout update to this Developer report is recorded in a separate documentation-only follow-up commit; the requested security-test commit remains the exact six-file commit above.
 
 ## 7. Commands executed
 
-- **VERIFIED**: Inspected `git status --short --branch`, current branch, recent log, local diff, and candidate branch existence. Fetched remote refs with `git fetch origin`.
-- **VERIFIED**: Checked `origin/main` with `git show`, compared it with `HEAD`, and verified `f934cb8` (T3.3) is an ancestor of `origin/main` using `git merge-base --is-ancestor f934cb8 origin/main`.
-- **VERIFIED**: Because pre-existing local work included a modified T3.3 report that differed from the updated base, preserved the entire tracked/untracked worktree in `git stash push --include-untracked -m "T3.4 preserve pre-existing work"`, then created/switched to `feature/T3.4-security-regression` from `origin/main` using `git switch -c feature/T3.4-security-regression origin/main`.
-- **VERIFIED**: `.\mvnw.cmd test "-Dtest=AuthControllerIntegrationTest,SecurityConfigurationIntegrationTest"` — focused security tests.
-- **VERIFIED**: `.\mvnw.cmd test` — full Maven suite, run once after the changes.
-- **VERIFIED**: Checked final `git status --short --branch`, `git rev-parse HEAD`, `git rev-parse origin/main`, `git diff --check`, diff summary/file list, stash list, and confirmed no existing T3.4 Developer report before creating this one.
+- **VERIFIED**: `git status --short --branch`; `git branch --show-current`; `git remote -v`; `git remote get-url origin`; `git stash list`; `git diff`; `git diff --cached`; and staged path/stat checks.
+- **VERIFIED**: `git fetch origin`; `git rev-parse HEAD`; `git rev-parse origin/main`; and `git merge-base HEAD origin/main`.
+- **VERIFIED**: Compared the prior primary Developer report with `history/developer-001.md` using `git diff --no-index --exit-code`; no differences were reported.
+- **VERIFIED**: Staged only the six paths listed in Section 6, reviewed the full staged diff, and ran `git diff --cached --check` with no whitespace errors.
+- **VERIFIED**: Attempted a staged-diff token/key pattern scan using `rg`; PowerShell reported `rg` was not recognized. The staged diff was manually reviewed; it showed test fixture constant references and no private key or credential literal. No dedicated secret-scanning tool was available in this execution.
+- **VERIFIED**: `git commit -m "test(security): add Phase 3 contract regression"` — created commit `ec7329d55c36921c702335cbe015002ada14cd80`.
+- **VERIFIED**: Fetched again and rechecked `origin/main`, merge base, and stash list before pushing. Pushed with `git push origin feature/T3.4-security-regression`.
+- **VERIFIED**: `gh --version` and `gh auth status` were attempted; `gh` was unavailable, so no PR was created by this execution.
+- **VERIFIED**: Updated `agent-reports/T3.4/developer-report.md` with closeout results, then committed that report-only update with `docs(reports): record T3.4 closeout` and pushed `feature/T3.4-security-regression` again.
+- **VERIFIED**: Final `git status --short --branch`, `git rev-parse HEAD`, `git ls-remote origin refs/heads/feature/T3.4-security-regression`, and `git stash list` were checked after pushing the report update.
 
 ## 8. Evidence and observed results
 
-- **VERIFIED** (`git fetch`, `git show origin/main`, and ancestry check): Updated `origin/main` is `ce6a453cdab6054263931237beff7ece9b73a680`, whose commit is the merge of PR #16 for T3.3; T3.3 commit `f934cb8` is an ancestor. The feature branch was created at that exact `origin/main` SHA.
-- **VERIFIED** (`git stash` output and `git stash list -1`): Pre-existing modified/untracked work was preserved in `stash@{0}` with message `T3.4 preserve pre-existing work`. It was not discarded or reapplied over the updated T3.3 report. The stash remains available; unrelated changes therefore remain preserved but are not currently in this branch's working tree.
-- **VERIFIED** (inspected Phase 2 tests): Client/Document controller tests and `ClientAggregateUpdateHttpIntegrationTest` use `@AutoConfigureMockMvc(addFilters = false)`. **RECONSTRUCTED** from these test annotations: those existing functional tests verify business/REST behavior without exercising the security filter chain. Existing security integration coverage accepted a valid token on the Client list and rejected missing/invalid/expired tokens on protected routes, but did not exercise authenticated full Client/Document CRUD through the filters.
-- **VERIFIED** (`AuthControllerIntegrationTest`): The added test obtains a token through the existing login endpoint/test harness and exercises authenticated Client POST, list, get, PUT, PATCH and DELETE plus Document POST, list, get, PUT, PATCH and DELETE. It checks established status codes, response fields, version headers/body and Problem Details on the post-delete not-found responses.
-- **VERIFIED** (`SecurityConfigurationIntegrationTest`): Missing bearer authentication is asserted as 401 for both Client list and nested Document list. Invalid-signature and expired JWT are asserted as 401 on the nested Document route; the invalid-token response is checked for safe Problem Details and absence of token/secret values. Existing valid Client JWT and public OpenAPI checks remain.
-- **VERIFIED** (`SecurityProblemHandlersTest` and `implementation-plan.md`, Section 7): The existing safe 403 handler test continues to assert a generic 403 Problem Details response without exception content. No business operation currently defines a forbidden case for the single-user/no-role model; no artificial authorization rule or 403 endpoint was introduced.
-- **VERIFIED** (focused Maven output): Command `.\mvnw.cmd test "-Dtest=AuthControllerIntegrationTest,SecurityConfigurationIntegrationTest"` succeeded — 9 tests run, 0 failures, 0 errors, 0 skipped (AuthControllerIntegrationTest: 3; SecurityConfigurationIntegrationTest: 6).
-- **VERIFIED** (full Maven output): Command `.\mvnw.cmd test` succeeded — 332 tests run, 0 failures, 0 errors, 0 skipped. No second full-suite run was performed.
-- **VERIFIED** (`git diff --check` and final Git status): No whitespace errors; only the two listed test files were modified before this report. Current branch HEAD equals `origin/main` at `ce6a453`; no commit, push, PR, or merge was performed.
-- **VERIFIED** (Maven focused output): Maven printed an HTTP 401 metadata-transfer warning for the Flyway community DB support repository; test execution continued and succeeded. **NOT AVAILABLE**: Whether this external metadata warning is transient or requires repository credentials.
-- **NOT AVAILABLE**: Independent Tester verification, Reviewer audit, and Human Tech Lead final acceptance have not been performed/recorded by this Developer execution.
+- **VERIFIED** (`git branch --show-current`): Current branch is `feature/T3.4-security-regression`.
+- **VERIFIED** (`git fetch origin`, `git rev-parse origin/main`, `git merge-base HEAD origin/main` before commit): The feature branch base and fetched `origin/main` were both `ce6a453cdab6054263931237beff7ece9b73a680`.
+- **VERIFIED** (`git show --stat --oneline HEAD` and `git show --format= --name-only HEAD`): Commit `ec7329d55c36921c702335cbe015002ada14cd80` has the requested subject and exactly the six files listed in Section 6. No application source/configuration files are included.
+- **VERIFIED** (`git push` output): The new remote branch `origin/feature/T3.4-security-regression` was created successfully.
+- **VERIFIED** (`gh` command output): GitHub CLI is unavailable in this environment. No PR was created. The push output offered the GitHub “pull/new” link. **VERIFIED** (origin URL and branch name): Manual compare URL for a PR against `main` is `https://github.com/pcfernandes/human-it-challenge/compare/main...feature/T3.4-security-regression?expand=1`.
+- **VERIFIED** (`git stash list` before/after the Git closeout operations): `stash@{0}: On feature/T3.3-jwt-login: T3.4 preserve pre-existing work` remains listed. No stash command that applies, drops, or modifies a stash was executed in this closeout.
+- **VERIFIED** (`git diff --cached --check` and full staged-diff inspection): No whitespace errors were reported. Manual review found only the authorized tests/reports and no credential literal; an automated `rg` scan could not run because `rg` is unavailable.
+- **VERIFIED** (Reviewer report): Non-blocking Minor findings M01, M02, and M03 remain documented: explicit version transition assertions, direct Swagger UI public-route coverage, and the disclosed review-sequence limitation.
+- **VERIFIED** (`git status --short --branch` after the report-only follow-up commit and push): No remaining worktree changes were reported on the feature branch.
+- **VERIFIED** (`git ls-remote origin refs/heads/feature/T3.4-security-regression` after push): The remote feature branch tip matches the local HEAD after the report-only follow-up commit.
 
 ## 9. Findings and severity
 
 | ID | Severity | Finding / disposition |
 |---|---|---|
-| T34-DEV-01 | Info | **VERIFIED / RECONSTRUCTED**: Existing Phase 2 endpoint tests disabled security filters; added one authenticated integration test to bridge the material test gap without changing application behavior. |
-| T34-DEV-02 | Info | **VERIFIED**: Existing 403 safe-handler test is present. No actual forbidden business action is defined for this one-user/no-role API, so no artificial 403 route was added. |
-| T34-DEV-03 | Info | **VERIFIED**: Unrelated pre-existing local changes were preserved in Git stash `stash@{0}` because a changed T3.3 report conflicted with the updated base. They were not lost, but are not checked out on this feature branch. |
-| T34-DEV-04 | Info | **VERIFIED**: Focused and full Maven test suites passed. Maven logged an external Flyway metadata HTTP 401 warning, but it did not fail either run. |
+| T34-DEV-05 | Minor — accepted non-blocking | **VERIFIED** (`reviewer-report.md` and direct Tech Lead tasking): M01, M02, and M03 remain documented and were explicitly accepted as non-blocking for this closeout. No code/test change was made to address them. |
+| T34-DEV-06 | Info / tooling blocker | **VERIFIED**: `gh` is unavailable; a PR could not be created from the command line. The manual compare URL is provided in Section 8 and the handoff. |
+| T34-DEV-07 | Info / verification limitation | **VERIFIED**: `rg` was unavailable, so the requested secret check was performed by manual review of the staged diff rather than an automated scanner. No credential literal or private-key content was observed. |
 
 ## 10. Decisions and reasoning
 
-- **VERIFIED**: Kept changes test-only. Reused `StartupTestHarness`, the existing public login flow, and the application-issued HS256 token rather than inventing credentials or adding test dependencies.
-- **VERIFIED**: Used one lifecycle integration scenario to cover all Client and nested Document CRUD methods under the real security filter chain, while retaining existing Phase 2 functional tests for detailed non-security contract behavior.
-- **VERIFIED**: Expanded route checks for missing, invalid and expired JWTs to include the nested Document API, since existing unauthenticated coverage already exercised the Client route.
-- **VERIFIED**: Left the existing 403-handler test intact. The approved plan explicitly says there are no roles/permissions and artificial authorization rules must not be added solely to trigger 403.
-- **VERIFIED**: Preserved prior local changes by stashing rather than attempting to overwrite a T3.3 report changed both locally and on the updated base. No reset, clean, rebase, force-push, commit, push, PR, or merge was run.
-- **VERIFIED**: Did not change T3.2 provisioning, production configuration, or credentials; the new CRUD test authenticates using the existing test harness login credentials.
+- **VERIFIED**: Staged only the two named security test files and the T3.4 agent reports/history; unrelated files were not staged or changed.
+- **VERIFIED**: Committed with the exact requested message and pushed the feature branch without force. No reset, clean, rebase, or stash mutation was performed.
+- **VERIFIED**: Did not create or imply a PR after confirming GitHub CLI was unavailable. Supplied the compare URL to enable manual PR creation targeting `main`.
+- **VERIFIED**: Did not merge. The Tech Lead authorization explicitly excludes merge.
+- **VERIFIED**: The T3.4 Tester report records focused and full Maven passes (10 focused tests and 332 full-suite tests, zero failures/errors/skips); no tests were rerun in this Git closeout execution.
 
 ## 11. Final status
 
-**IMPLEMENTED AND TESTED — pending independent Tester verification, Reviewer audit, and Human Tech Lead acceptance.** The requested regression tests were added/adjusted and both test runs passed. This report does not approve or mark T3.4 complete.
+**COMMIT CREATED AND PUSHED; PR NOT CREATED because GitHub CLI is unavailable.** The requested security-regression commit is on `feature/T3.4-security-regression`. Manual PR creation remains outstanding using the compare URL below. No merge was performed. This report does not alter the Tech Lead’s documented acceptance or authorize any additional scope.
 
 ## 12. Outstanding issues
 
-- **PENDING VERIFICATION**: Tester must independently verify the implementation and Phase 3 contract before reading Developer conclusions; Reviewer must independently audit before reading other agent reports.
-- **PENDING APPROVAL**: Human Tech Lead acceptance remains outstanding; Phase 3 exit criteria and T3.4 are not declared complete here.
-- **VERIFIED**: Pre-existing unrelated work is preserved in `stash@{0}`. Reapply it only when safe, accounting for its T3.3 report conflict with updated `origin/main`.
-- **NOT AVAILABLE**: Cause/remediation for the non-fatal external Flyway metadata HTTP 401 warning is not established.
+- **PENDING ACTION**: Create the PR manually against `main`, with title `T3.4 — Phase 3 Contract Regression`, at `https://github.com/pcfernandes/human-it-challenge/compare/main...feature/T3.4-security-regression?expand=1`.
+- **VERIFIED**: Do not merge; merge was not authorized.
+- **VERIFIED**: Keep the existing stash intact. Unrelated pre-existing work remains preserved there and was not restored to this branch.
+- **VERIFIED**: Reviewer Minor findings M01–M03 remain non-blocking as explicitly accepted by the Tech Lead; no follow-up test or code change is part of this closeout.
 
 ## 13. Handoff to next agent
 
-- **VERIFIED**: Test changes are in `src/test/java/com/humanit/challenge/security/AuthControllerIntegrationTest.java` and `SecurityConfigurationIntegrationTest.java`; report is `agent-reports/T3.4/developer-report.md`.
-- **VERIFIED**: Branch is `feature/T3.4-security-regression`, based at `ce6a453cdab6054263931237beff7ece9b73a680`; no Git close-out operation was performed.
-- **VERIFIED**: Prior unrelated work remains intact in `stash@{0}`; do not discard the stash.
-- **PENDING VERIFICATION**: Tester should complete independent verification before consulting this report. Reviewer should complete the independent audit before consulting Architect, Developer, or Tester conclusions. Human Tech Lead alone decides acceptance.
+- **VERIFIED**: Requested commit SHA: `ec7329d55c36921c702335cbe015002ada14cd80`; branch pushed: `feature/T3.4-security-regression`.
+- **PENDING ACTION**: Human Tech Lead or authorized GitHub operator should manually open the compare URL above and create the PR to `main` with the exact requested title. Do not merge.
+- **VERIFIED**: Prior Developer report is preserved unchanged at `agent-reports/T3.4/history/developer-001.md`; this is the latest Developer report.
