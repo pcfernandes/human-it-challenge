@@ -117,6 +117,40 @@ class OpenApiConfigTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void generatedApiDocumentsCanonicalPathsLoginConstraintsAndLoginServerError() throws Exception {
+        String body = mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        JsonNode document = objectMapper.readTree(body);
+        JsonNode paths = document.path("paths");
+
+        assertThat(paths.path("/api/clients").has("get")).isTrue();
+        assertThat(paths.path("/api/clients").has("post")).isTrue();
+        assertThat(paths.path("/api/clients/{id}").has("get")).isTrue();
+        assertThat(paths.path("/api/clients/{id}").has("put")).isTrue();
+        assertThat(paths.path("/api/clients/{id}").has("patch")).isTrue();
+        assertThat(paths.path("/api/clients/{id}").has("delete")).isTrue();
+        assertThat(paths.path("/api/clients/{clientId}/documents").has("get")).isTrue();
+        assertThat(paths.path("/api/clients/{clientId}/documents").has("post")).isTrue();
+        assertThat(paths.path("/api/clients/{clientId}/documents/{documentId}").has("get")).isTrue();
+        assertThat(paths.path("/api/clients/{clientId}/documents/{documentId}").has("put")).isTrue();
+        assertThat(paths.path("/api/clients/{clientId}/documents/{documentId}").has("patch")).isTrue();
+        assertThat(paths.path("/api/clients/{clientId}/documents/{documentId}").has("delete")).isTrue();
+
+        JsonNode schemas = document.path("components").path("schemas");
+        JsonNode loginSchema = schemas.path("LoginRequest");
+        assertThat(loginSchema.path("properties").path("username").path("minLength").asInt())
+                .isGreaterThanOrEqualTo(1);
+        assertThat(loginSchema.path("properties").path("password").path("minLength").asInt())
+                .isGreaterThanOrEqualTo(1);
+        assertThat(loginSchema.path("required").toString()).contains("username", "password");
+
+        JsonNode loginServerError = paths.path("/auth/login").path("post").path("responses").path("500");
+        assertThat(loginServerError.path("content").path("application/problem+json").path("schema")
+                .path("$ref").asText()).isEqualTo("#/components/schemas/ProblemDetail");
+    }
+
     private int countBusinessOperations(JsonNode paths) {
         int count = 0;
         var pathIterator = paths.fields();

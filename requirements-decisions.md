@@ -108,17 +108,17 @@ Required fields:
 
 |---|---|---|
 
-| POST | `/clients` | Create Client, optionally with Documents |
+| POST | `/api/clients` | Create Client, optionally with Documents |
 
-| GET | `/clients` | List Clients with pagination |
+| GET | `/api/clients` | List Clients with pagination |
 
-| GET | `/clients/{id}` | Retrieve Client |
+| GET | `/api/clients/{id}` | Retrieve Client |
 
-| PUT | `/clients/{id}` | Replace editable Client fields |
+| PUT | `/api/clients/{id}` | Replace editable Client fields |
 
-| PATCH | `/clients/{id}` | Partially update Client |
+| PATCH | `/api/clients/{id}` | Partially update Client |
 
-| DELETE | `/clients/{id}` | Delete Client and associated Documents |
+| DELETE | `/api/clients/{id}` | Delete Client and associated Documents |
 
 
 
@@ -130,17 +130,17 @@ Required fields:
 
 |---|---|---|
 
-| POST | `/clients/{clientId}/documents` | Create Document |
+| POST | `/api/clients/{clientId}/documents` | Create Document |
 
-| GET | `/clients/{clientId}/documents` | List Documents with pagination |
+| GET | `/api/clients/{clientId}/documents` | List Documents with pagination |
 
-| GET | `/clients/{clientId}/documents/{documentId}` | Retrieve Document |
+| GET | `/api/clients/{clientId}/documents/{documentId}` | Retrieve Document |
 
-| PUT | `/clients/{clientId}/documents/{documentId}` | Replace editable Document fields |
+| PUT | `/api/clients/{clientId}/documents/{documentId}` | Replace editable Document fields |
 
-| PATCH | `/clients/{clientId}/documents/{documentId}` | Partially update Document |
+| PATCH | `/api/clients/{clientId}/documents/{documentId}` | Partially update Document |
 
-| DELETE | `/clients/{clientId}/documents/{documentId}` | Delete Document |
+| DELETE | `/api/clients/{clientId}/documents/{documentId}` | Delete Document |
 
 
 
