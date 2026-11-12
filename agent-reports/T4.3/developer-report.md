@@ -1,13 +1,13 @@
-# Developer Report — T4.3 README and Technical Decisions
+# Developer Report — T4.3 Git Closeout
 
 ## 1. Task ID
 
-- **VERIFIED** (direct Tech Lead tasking and `agent-reports/T4.3/architect-proposal.md`): `T4.3 — README and Technical Decisions`.
+- **VERIFIED** (direct Tech Lead tasking): `T4.3 — Git closeout (commit and push)`.
 
 ## 2. Execution identifier and date
 
-- **VERIFIED** (execution environment): `T4.3-DEV-001`, 2026-11-12.
-- **VERIFIED** (`agent-reports/T4.3/` pattern inspection before writing): `developer-report.md` and a `history/` archive were not present, so no previous Developer report required archiving.
+- **VERIFIED** (execution environment): `T4.3-DEV-CLOSEOUT-001`, 2026-11-12.
+- **VERIFIED** (`agent-reports/T4.3/history/developer-001.md`): The prior Developer report was archived unchanged before this primary report was replaced.
 
 ## 3. Agent role and model
 
@@ -15,75 +15,68 @@
 
 ## 4. Authorized scope
 
-- **VERIFIED** (direct Tech Lead authorization): Implement the Architect's T4.3 documentation proposal only.
-- **VERIFIED** (direct tasking): Change only `README.md`, `implementation-plan.md`, and the new `agent-reports/T4.3/developer-report.md`. Do not change requirements, application/test code, Docker assets, or other reports; do not run the full Maven suite; do not commit, push, create a PR, merge, switch branches, modify the stash, or mark T4.3 complete.
+- **VERIFIED** (direct Tech Lead tasking): T4.3 is accepted; explicit authorization was given to commit and push only the seven listed approved files. No PR or merge was authorized. Do not switch branches, modify the stash, stage other files, include `.opencode/agents/tester.md`, include T3.5-CLOSEOUT or T4.2-GIT-CLOSEOUT, or rerun tests.
+- **VERIFIED** (direct tasking): Commit message required: `docs(T4.3): update README and technical decisions`. Push only the current branch to its matching remote branch; stop if branch/remote is unexpected or an approved file is missing.
 
 ## 5. Files inspected
 
-- **VERIFIED**: `agent-reports/README.md`, `agent-reports/T4.3/architect-proposal.md`, `README.md`, `implementation-plan.md`, and `requirements-decisions.md`.
-- **VERIFIED**: `pom.xml`, `.mvn/wrapper/maven-wrapper.properties`, `mvnw.cmd`, `src/main/resources/application.yml`, `application-dev.yml`, `application-prod.yml`, `src/main/resources/db/migration/V1__baseline.sql`, and `V2__create_clients_and_documents.sql`.
-- **VERIFIED**: `AuthController.java`, `ClientController.java`, `DocumentController.java`, `SecurityConfiguration.java`, `SecurityProblemHandlers.java`, `SingleUserProvisioningConfiguration.java`, `GlobalExceptionHandler.java`, `OpenApiConfig.java`, `LoginRequest.java`, `TokenResponse.java`, `AppDemoUserProperties.java`, `AppJwtProperties.java`, `Client.java`, `Document.java`, `ClientService.java`, `DocumentService.java`, and `ClientRepository.java` at their corresponding paths under `src/main/java/com/humanit/challenge/`.
+- **VERIFIED**: `agent-reports/README.md`, T4.3 Architect, Developer, Tester, Reviewer and archived Tester reports; `README.md`; and `implementation-plan.md`.
+- **VERIFIED**: Current branch, upstream, configured remote, initial status, approved-file status, and the README/plan diff were inspected using Git.
 
 ## 6. Files changed
 
-- **VERIFIED**: `README.md` — replaced obsolete Phase 1 status with current purpose, prerequisites, H2 startup, credential environment variables, V1/V2 migrations, login and bearer usage, endpoints, OpenAPI URLs, pagination/update/version behavior, error format, build/test commands, design decisions and limitations.
-- **VERIFIED**: `implementation-plan.md` — aligned T2.3 Client routes, T2.4 nested Document routes, and T2.7 DELETE routes with `/api/clients`.
-- **VERIFIED**: `agent-reports/T4.3/developer-report.md` — created this report under the mandatory report convention. No earlier Developer report existed to archive.
-- **VERIFIED**: No application code, tests, `pom.xml`, `requirements-decisions.md`, Architect/other agent reports, Docker assets, or Git/stash metadata were changed by this execution.
+- **VERIFIED**: The first closeout commit contains exactly the seven approved paths: `README.md`, `implementation-plan.md`, `agent-reports/T4.3/architect-proposal.md`, `agent-reports/T4.3/developer-report.md`, `agent-reports/T4.3/tester-report.md`, `agent-reports/T4.3/reviewer-report.md`, and `agent-reports/T4.3/history/tester-001.md`.
+- **VERIFIED**: For this execution's mandatory reporting, the prior Developer report was archived at `agent-reports/T4.3/history/developer-001.md` and this primary `developer-report.md` was created. The archive is outside the user-approved staging list and was not staged for the requested closeout commit.
+- **VERIFIED**: No application or test code was changed. No `.opencode/agents/tester.md`, T3.5-CLOSEOUT, or T4.2-GIT-CLOSEOUT path was staged or committed.
 
 ## 7. Commands executed
 
-- **VERIFIED**: `git status --short; git diff -- README.md implementation-plan.md; git stash list` — inspected pre-existing work, allowed-file diff, and stash state. The output showed `stash@{0}: On feature/T3.3-jwt-login: T3.4 preserve pre-existing work`; no stash operation was performed.
-- **VERIFIED**: `git diff --check` — executed for documentation changes. It reported no whitespace errors. Git emitted line-ending notices that LF will be replaced by CRLF for `README.md` and `implementation-plan.md` on a future Git touch.
-- **VERIFIED** (PowerShell command output): `rg -n -F ' /clients' implementation-plan.md; if ($LASTEXITCODE -eq 1) { Write-Output 'No bare /clients route references in implementation-plan.md' }` — could not run because `rg` is not installed/available in this environment. The requested T2.3/T2.4/T2.7 sections were instead read directly and their changed paths were inspected in `git diff`.
-- **VERIFIED**: No Maven command, application startup, test command, Git write operation, or stash operation was run.
-- **VERIFIED**: File reads, file-pattern inspection and content search were used to compare documentation with project sources; they did not execute the documented runtime/build examples.
+- **VERIFIED**: `git status --short --branch; git branch --show-current; git remote -v` — current branch was `feature/T4.2-contract-consistency`; upstream and push remote were `origin` at the configured GitHub URL. Initial unrelated work was `.opencode/agents/tester.md` and untracked `agent-reports/T3.5-CLOSEOUT/`, `agent-reports/T4.2-GIT-CLOSEOUT/`, and `agent-reports/T4.3/`.
+- **VERIFIED**: `git diff -- README.md implementation-plan.md`, `git diff --check -- README.md implementation-plan.md`, and targeted status/read inspections — the documentation changes were reviewed; no whitespace errors were reported (Git emitted LF-to-CRLF future-touch warnings).
+- **VERIFIED**: `git add -- README.md implementation-plan.md agent-reports/T4.3/architect-proposal.md agent-reports/T4.3/developer-report.md agent-reports/T4.3/tester-report.md agent-reports/T4.3/reviewer-report.md agent-reports/T4.3/history/tester-001.md` — only the seven explicitly approved paths were added.
+- **VERIFIED**: `git diff --cached --check` — passed with no whitespace errors. `git diff --cached --name-only` listed exactly the seven approved paths and no others.
+- **VERIFIED**: `git commit -m "docs(T4.3): update README and technical decisions"` — created commit `1fa1f935989781b7d24a468c96122a3b13e11d6d`; Git reported seven files changed, 546 insertions and 130 deletions.
+- **VERIFIED**: `git push origin feature/T4.2-contract-consistency` — push succeeded (`1baf3f1..1fa1f93`) to the matching origin branch; no force push was used.
+- **VERIFIED**: `git rev-parse HEAD`; `git show --format="%H%n%s" --name-only HEAD`; `git status --short --branch`; `git rev-parse --abbrev-ref --symbolic-full-name '@{u}'` — confirmed the commit hash/message/path list, current branch/upstream, and remaining worktree state.
+- **VERIFIED**: An initial attempt to combine the verification commands with an unquoted PowerShell argument `@{u}` failed at PowerShell parsing before running the command; the corrected quoted command then succeeded. No Git state was changed by the failed attempt.
+- **VERIFIED**: No test or Maven command was run. No stash, branch, PR, or merge operation was performed.
 
 ## 8. Evidence and observed results
 
-- **VERIFIED** (`pom.xml`, `.mvn/wrapper/maven-wrapper.properties`, `mvnw.cmd`): Java 21 is enforced; Maven 3.10.0 is the wrapper distribution; wrapper version is 3.3.4; the Spring Boot Maven plugin and Maven Enforcer configuration are present. The documented `spring-boot:run`, `clean verify`, and `test` wrapper command forms are consistent with those artifacts. These commands were checked against source but not run.
-- **VERIFIED** (`application.yml`, `application-dev.yml`, `application-prod.yml`, `AppJwtProperties.java`, `AppDemoUserProperties.java`, `SingleUserProvisioningConfiguration.java`): `dev` is the default H2 profile. The documented development variables are `APP_SECURITY_JWT_SECRET`, `APP_SECURITY_DEMO_USER_USERNAME`, and `APP_SECURITY_DEMO_USER_PASSWORD_HASH`; the JWT secret is standard Base64 with at least 32 decoded bytes, and the configured password value must be BCrypt. `prod` uses PostgreSQL environment variables and a separately configured account. No credential values were added to the README.
-- **VERIFIED** (`V1__baseline.sql`, `V2__create_clients_and_documents.sql`, `application.yml`): V1 is comment-only; V2 creates the Clients and Documents schema and constraints. Flyway uses `classpath:db/migration`; Hibernate is set to `ddl-auto: validate`; SQL initialization is disabled.
-- **VERIFIED** (`AuthController.java`, `LoginRequest.java`, `TokenResponse.java`, `SecurityConfiguration.java`): Login is `POST /auth/login`, accepts `username` and `password`, returns `accessToken` and `tokenType`, and the authenticated route policy requires bearer authentication outside the permitted login and Swagger/OpenAPI paths. The documented protected GET uses the controller's `/api/clients` mapping and supported `page` and `size` parameters.
-- **VERIFIED** (`ClientController.java`, `DocumentController.java`, `OpenApiConfig.java`): Client CRUD is mapped under `/api/clients`; Document CRUD is mapped under `/api/clients/{clientId}/documents`; Swagger UI and OpenAPI JSON paths are `/swagger-ui/index.html` and `/v3/api-docs` and are permitted without authentication. Both list controllers use zero-based pages, defaults 0/20, ascending ID order and a maximum size of 100.
-- **VERIFIED** (`ClientController.java`, `DocumentController.java`, service/domain/repository files, and `requirements-decisions.md`): The README's summary reflects implemented PUT/PATCH collection semantics, expected version inputs, optimistic conflicts, parent Client version changes for Document mutations, and transaction boundaries. The README does not reproduce every endpoint-specific version rule.
-- **VERIFIED** (`GlobalExceptionHandler.java`, `SecurityProblemHandlers.java`, `OpenApiConfig.java`): Application and security error handling uses RFC 9457 Problem Details with `application/problem+json`; inspected handlers avoid returning stack traces, secret values, or SQL details.
-- **VERIFIED** (`implementation-plan.md`, exact T2.3/T2.4/T2.7 diff): Only route paths in the specified task sections changed; task descriptions and acceptance criteria were otherwise preserved.
-- **VERIFIED** (`git diff --check` output): No whitespace errors were reported. The displayed LF-to-CRLF notices are line-ending warnings, not whitespace errors.
-- **PENDING VERIFICATION**: No PowerShell example, wrapper build/test command, app startup, login, protected GET or full Maven suite was executed in this Developer stage. Tester execution remains necessary to validate runtime behavior and actual setup.
-- **NOT AVAILABLE** (`README.md` and inspected project files): No working credential, sample BCrypt hash or repository-provided BCrypt-generation utility was included. The README uses explicit placeholders and requires user-provisioned values.
-- **VERIFIED** (initial `git status --short` output): Untracked directories `agent-reports/T3.5-CLOSEOUT/`, `agent-reports/T4.2-GIT-CLOSEOUT/`, and `agent-reports/T4.3/` were present before the documentation edits. They were not modified except for creating this authorized report in the existing T4.3 directory. The existing stash was left untouched.
+- **VERIFIED** (`git status --short --branch`, upstream query): Current branch `feature/T4.2-contract-consistency` tracks `origin/feature/T4.2-contract-consistency`; remote `origin` is configured at `https://github.com/pcfernandes/human-it-challenge.git`. This matched the current branch's upstream, so closeout continued without switching branches.
+- **VERIFIED** (approved-file status, reads, and staged path list): All seven approved paths existed. The staged path list exactly matched the approved list; unrelated paths were excluded.
+- **VERIFIED** (`git diff --cached --check`): No whitespace errors were found. LF-to-CRLF messages were line-ending warnings, not check failures.
+- **VERIFIED** (`git show` and commit output): Commit `1fa1f935989781b7d24a468c96122a3b13e11d6d` has the requested subject and includes exactly the seven approved files.
+- **VERIFIED** (push output and branch status): Push to `origin/feature/T4.2-contract-consistency` succeeded; after the push, HEAD was `1fa1f935989781b7d24a468c96122a3b13e11d6d` and branch status showed no ahead/behind count.
+- **VERIFIED** (post-push `git status --short --branch`): Remaining pre-existing/unrelated changes were modified `.opencode/agents/tester.md` and untracked `agent-reports/T3.5-CLOSEOUT/` and `agent-reports/T4.2-GIT-CLOSEOUT/`. The newly required `history/developer-001.md` archive is also untracked because it is not an approved commit path. No stash operation occurred.
+- **PENDING VERIFICATION**: The post-closeout primary report update has been written after commit `1fa1f93`; whether this report update is committed/pushed separately is not established in this report snapshot.
 
 ## 9. Findings and severity
 
 | ID | Severity | Finding |
 |---|---|---|
-| T43-DEV-01 | Minor — verification pending | **PENDING VERIFICATION**: README PowerShell setup, login, protected GET, wrapper build and test instructions need to be followed independently by the Tester. Structural inspection is not proof of successful execution. |
-| T43-DEV-02 | Minor — environment prerequisite | **NOT AVAILABLE**: The repository does not provide a credential or BCrypt-hash generation workflow. Users/Testers must supply their own valid username, corresponding password and BCrypt hash as the README instructs. |
-| T43-DEV-03 | Informational — known limitation | **VERIFIED** (`application-prod.yml`, `implementation-plan.md` T2.9 and Docker artifact search referenced in `agent-reports/T4.3/architect-proposal.md`): PostgreSQL is configured but real PostgreSQL integration is not verified; Dockerfile/Compose are not yet implemented. README now states both limitations. |
+| T43-CLOSEOUT-01 | Informational — unrelated work remains | **VERIFIED**: `.opencode/agents/tester.md`, `agent-reports/T3.5-CLOSEOUT/`, and `agent-reports/T4.2-GIT-CLOSEOUT/` were left untouched and not staged/committed. |
+| T43-CLOSEOUT-02 | Informational — required execution-history archive | **VERIFIED**: The prior Developer report was preserved unchanged in `history/developer-001.md`; this archive is not on the approved staging list and remains untracked. |
 
 ## 10. Decisions and reasoning
 
-- **VERIFIED** (authorized scope and `agent-reports/T4.3/architect-proposal.md`): Replaced outdated README statements instead of appending a conflicting status note. Kept the update limited to the approved documentation files and did not edit `requirements-decisions.md`.
-- **VERIFIED** (`README.md`, source/configuration cross-check): Used PowerShell examples with placeholders for the username, plaintext login password and BCrypt hash; JWT generation creates random bytes locally. No working credentials or secret were invented or exposed.
-- **VERIFIED** (`implementation-plan.md` diff): Updated only T2.3, T2.4 and T2.7 route strings to canonical `/api/clients` paths, preserving their task descriptions and acceptance criteria.
-- **VERIFIED** (direct task constraints): Did not run the Maven suite or application and did not modify code/tests, Docker files, requirements, the stash or Git history. Documentation command claims are source-checked, not runtime-verified.
+- **VERIFIED** (direct authorization and Git evidence): Continued on the existing branch because its configured upstream was the matching origin branch; used an ordinary push with no force option.
+- **VERIFIED** (approved path list and staged path output): Staged only the seven expressly approved paths, and did not include unrelated modifications or task directories.
+- **VERIFIED** (direct task constraints): Did not create a PR or merge, switch branches, modify the stash, or rerun tests.
+- **VERIFIED** (`agent-reports/README.md`, Sections 4 and 6): Preserved the previous primary Developer report unchanged in the numbered history archive before replacing the primary report with this execution's report.
 
 ## 11. Final status
 
-**DOCUMENTATION IMPLEMENTED — READY FOR TESTER VERIFICATION — T4.3 NOT COMPLETE.** **VERIFIED**: The authorized README and route-reference updates were made, and `git diff --check` reported no whitespace errors. **PENDING VERIFICATION**: Runtime setup and all documented commands remain for independent Tester verification. No final acceptance is claimed.
+**CLOSEOUT COMMIT AND PUSH SUCCEEDED.** **VERIFIED**: Approved files were committed as `1fa1f935989781b7d24a468c96122a3b13e11d6d` and pushed to `origin/feature/T4.2-contract-consistency`. The final worktree state after this report update requires a fresh Git status check because this report was written after the recorded post-push status. This report does not alter or supersede the human Tech Lead's T4.3 acceptance.
 
 ## 12. Outstanding issues
 
-- **PENDING VERIFICATION**: Tester should follow the documented PowerShell H2 startup, authenticate with Tester-owned credentials and a valid BCrypt hash, then perform the documented bearer-authenticated `GET /api/clients`.
-- **PENDING VERIFICATION**: Tester should validate the documented wrapper commands and run the authorized test/build checks independently. No Maven suite was run in this Developer stage.
-- **VERIFIED**: Dockerfile and Compose are not implemented; the README does not provide container commands.
-- **VERIFIED**: PostgreSQL configuration exists, but a real PostgreSQL integration has not been verified.
-- **VERIFIED** (`implementation-plan.md`, Phase 3 decisions): Registration, roles/permissions and refresh tokens are not implemented.
-- **PENDING VERIFICATION**: Independent Reviewer audit and human Tech Lead acceptance remain required; this report does not mark T4.3 complete.
+- **VERIFIED**: Pre-existing `.opencode/agents/tester.md`, T3.5-CLOSEOUT, and T4.2-GIT-CLOSEOUT work was not included in the closeout commit.
+- **VERIFIED**: The mandatory `history/developer-001.md` archive is outside the approved commit list and is intentionally not staged.
+- **PENDING VERIFICATION**: Recheck status after saving this report and determine whether the report update should be committed as an approved-file-only follow-up; no second commit or push is claimed here.
 
 ## 13. Handoff to next agent
 
-- **VERIFIED**: Documentation changes are ready for the Tester to independently verify. Test the documented setup without reading this report as a prerequisite, using Tester-owned credentials and a valid BCrypt hash.
-- **PENDING VERIFICATION**: Report observed command and endpoint results independently; resolve any mismatch between the README instructions and runtime behavior through authorized follow-up.
-- **VERIFIED**: Report path: `agent-reports/T4.3/developer-report.md`. Final status: documentation implemented; ready for Tester verification; T4.3 remains open. Outstanding items: runtime/build/test verification, PostgreSQL verification, Docker/Compose delivery, independent review and Tech Lead acceptance.
+- **VERIFIED**: Requested documentation closeout commit: `1fa1f935989781b7d24a468c96122a3b13e11d6d`, subject `docs(T4.3): update README and technical decisions`; push succeeded to `origin/feature/T4.2-contract-consistency`.
+- **VERIFIED**: The seven paths in the commit are exactly those authorized by the Tech Lead for this closeout. No PR or merge was created and no tests were rerun.
+- **PENDING VERIFICATION**: Confirm final Git status after this report write; report the untouched unrelated paths and do not stage any path outside the approved list.
