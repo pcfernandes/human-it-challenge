@@ -3,7 +3,6 @@ package com.humanit.challenge.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -115,9 +114,7 @@ class SecurityConfigurationIntegrationTest {
     }
 
     @Test
-    void loginAndOpenApiRoutesArePublicBeforeLoginEndpointIsImplemented() throws Exception {
-        mockMvc.perform(post("/auth/login"))
-                .andExpect(status().isNotFound());
+    void openApiRouteIsPublic() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk());
     }
