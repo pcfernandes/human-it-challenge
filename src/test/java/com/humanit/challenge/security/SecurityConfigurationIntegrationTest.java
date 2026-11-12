@@ -72,7 +72,8 @@ class SecurityConfigurationIntegrationTest {
                         JwsHeader.with(MacAlgorithm.HS256).build(), claims(Instant.now().plusSeconds(120))))
                 .getTokenValue();
 
-        String body = mockMvc.perform(get("/api/clients").header("Authorization", "Bearer " + invalidToken))
+        String body = mockMvc.perform(get("/api/clients/1/documents")
+                        .header("Authorization", "Bearer " + invalidToken))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
                 .andReturn().getResponse().getContentAsString();
@@ -82,7 +83,7 @@ class SecurityConfigurationIntegrationTest {
 
     @Test
     void rejectsExpiredJwt() throws Exception {
-        mockMvc.perform(get("/api/clients")
+        mockMvc.perform(get("/api/clients/1/documents")
                         .header("Authorization", "Bearer " + token(Instant.now().minusSeconds(30))))
                 .andExpect(status().isUnauthorized());
     }
@@ -97,6 +98,10 @@ class SecurityConfigurationIntegrationTest {
         assertThat(body).contains("Unauthorized", "Authentication is required")
                 .doesNotContain(StartupTestHarness.VALID_SECRET_32_BYTES,
                         StartupTestHarness.TEST_PASSWORD_INPUT, StartupTestHarness.TEST_BCRYPT_HASH, "accessToken");
+
+        mockMvc.perform(get("/api/clients/1/documents"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
     }
 
     @Test
