@@ -13,7 +13,7 @@ This Java 21 / Spring Boot application provides a REST API for managing Clients 
 
 ## Local development with H2
 
-The default profile is `dev`, which uses an in-memory H2 database. Set these required environment variables before starting:
+The default profile is `dev`, which uses an in-memory H2 database. This local Java/Maven-wrapper path does not require Docker, PostgreSQL, or database setup. Set these required environment variables before starting:
 
 | Variable | Value |
 |---|---|
@@ -44,11 +44,46 @@ $env:APP_SECURITY_DEMO_USER_PASSWORD_HASH = "<BCrypt-hash-for-your-password>"
 
 The application listens on port 8080 by default. No database setup is needed for the in-memory H2 profile.
 
+## Docker Compose with PostgreSQL
+
+For the containerized path, install Docker Engine with the Compose plugin. Compose builds the application image, activates the `prod` profile, and starts PostgreSQL; these tools and settings are not needed for local H2 development.
+
+Copy `.env.example` to `.env` and replace every placeholder with your own local values. In PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Compose requires all six variables:
+
+| Variable | Purpose |
+|---|---|
+| `POSTGRES_DB` | Database name. |
+| `POSTGRES_USER` | PostgreSQL username. |
+| `POSTGRES_PASSWORD` | PostgreSQL password. |
+| `APP_SECURITY_JWT_SECRET` | Base64 secret decoding to at least 32 bytes. |
+| `APP_SECURITY_USER_USERNAME` | Application login username. |
+| `APP_SECURITY_USER_PASSWORD_HASH` | BCrypt hash for the application login password, not the plaintext password. If the hash contains `$`, single-quote the value in `.env` so Compose treats it literally. |
+
+Keep `.env` private; it is ignored by Git. Start the stack from the repository root:
+
+```powershell
+docker compose up --build -d
+```
+
+The API is available at `http://localhost:8080`. Stop and remove the containers and network with:
+
+```powershell
+docker compose down
+```
+
+PostgreSQL data is stored in the named `postgres_data` volume and survives `docker compose down`. The database keeps the credentials it was initialized with: changing `POSTGRES_USER` or `POSTGRES_PASSWORD` in `.env` does not update an existing volume and can cause authentication failures. Removing the volume (for example, with `docker compose down -v`) deletes its database data; do so only when you intentionally want a destructive reset.
+
 ## Database and migrations
 
 Flyway runs migrations from `classpath:db/migration`; Hibernate uses `ddl-auto: validate` and does not create or alter the schema. `V1__baseline.sql` is a comment-only baseline migration. `V2__create_clients_and_documents.sql` creates the Client and Document tables, uniqueness constraints, Client foreign key with cascade deletion, and Client index. Spring SQL initialization is disabled.
 
-The `prod` profile is configured for PostgreSQL using `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`, together with `APP_SECURITY_JWT_SECRET`, `APP_SECURITY_USER_USERNAME`, and `APP_SECURITY_USER_PASSWORD_HASH`. Supply production values through a secure environment/secrets mechanism. PostgreSQL configuration exists, but integration against a real PostgreSQL instance has not yet been verified.
+The `prod` profile uses PostgreSQL through `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`, together with `APP_SECURITY_JWT_SECRET`, `APP_SECURITY_USER_USERNAME`, and `APP_SECURITY_USER_PASSWORD_HASH`. Compose maps the `.env` values above to these settings. Outside Compose, supply production values through a secure environment/secrets mechanism.
 
 ## Authentication and API usage
 
@@ -101,8 +136,7 @@ Run from the repository root in PowerShell:
 
 ## Limitations
 
-- A Dockerfile and Docker Compose configuration have not yet been implemented; no container startup commands are available.
-- PostgreSQL configuration exists, but integration against a real PostgreSQL instance is not yet verified.
+- The T5.2 isolated fresh-volume Compose check verified PostgreSQL health, `prod` application startup, Flyway migrations V1/V2, and HTTP 200 from `/v3/api-docs`. This is a scoped local check, not validation of broader production deployment or operations.
 - The application has no registration endpoint, roles/permissions, or refresh-token flow; it supports one configured account at a time.
 
 ## Changelog
