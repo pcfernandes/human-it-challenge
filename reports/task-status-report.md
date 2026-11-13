@@ -89,3 +89,24 @@ These commands were **not** executed as part of this reporting task; the report 
 ---
 
 **Status of this report:** Complete for the evidence available on 2026-11-09. It must be refreshed as new authorized evidence is produced.
+
+---
+
+## 7. Current status addendum (2026-11-13)
+
+The board in Section 3 reflects only the evidence available on 2026-11-09 and is retained as a historical record. Subsequent authorized work completed all phases T1.1–T6.3. Corrected status, based on repository and agent-report evidence:
+
+| Task / phase | Current status | Evidence |
+|---|---|---|
+| T1.1 – T1.6 (Phase 1) | Complete; each task accepted by the Human Tech Lead | `agent-reports/decisions.md` D-04 … D-09; `agent-reports/T1.x/` reports |
+| T2.1 | Accepted with documented Minor findings | `agent-reports/decisions.md` D-10; `agent-reports/T2.1/` reports |
+| T2.2 – T2.9 (Phase 2) | Implemented, tested and audited | `agent-reports/T2.x/` reports; source tree under `src/main/java` |
+| Phase 3 (T3.1 – T3.5) | Implemented, tested and audited | `agent-reports/T3.x/` reports; `SecurityConfiguration`, `AuthController` |
+| Phase 4 (T4.1 – T4.3) | Implemented, tested and audited | `agent-reports/T4.x/` reports; `OpenApiConfig`, `README.md` |
+| Phase 5 (T5.1 – T5.3) | Implemented, tested and audited | `agent-reports/T5.x/` reports; `Dockerfile`, `compose.yaml` |
+| T6.1 – T6.2 | Complete | `agent-reports/T6.1/`, `agent-reports/T6.2/` reports |
+| T6.3 | Accepted; final release released 2026-11-13 | `agent-reports/decisions.md` D-14, D-15; `agent-reports/T6.3/reviewer-report.md`; `agent-reports/T6.3/maven-clean-verify.log` (BUILD SUCCESS, 338 tests, 0 failures, 0 errors, 0 skipped) |
+
+- The workspace **is** a Git repository. `HEAD`, local `main` and `origin/main` resolve to `ce997e7` (merge of T6.2, `Merge pull request #25`); T6.2 commit `8c2bd74` is an ancestor of `main`. See `agent-reports/T6.3/tester-report.md` and `reviewer-report.md` (Git evidence).
+- `requirements-decisions.md` status lines updated 2026-11-13 to reflect completion.
+- Process waivers and final acceptance: `agent-reports/decisions.md` D-14 and D-15; `reports/approval-and-decision-log.md` Section 6.
