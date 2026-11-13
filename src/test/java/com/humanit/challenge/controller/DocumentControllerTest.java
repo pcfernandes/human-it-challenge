@@ -72,6 +72,22 @@ class DocumentControllerTest {
     }
 
     @Test
+    void postWithInvalidDocumentBodyReturns400ProblemDetails() throws Exception {
+        mockMvc.perform(post("/api/clients/7/documents")
+                        .header("X-Client-Version", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"number":" ","description":"Passport","expirationDate":"2030-01-01"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.status").value(400));
+        verifyNoInteractions(documentService);
+    }
+
+    @Test
     void listAndGetDocumentAreScopedToClient() throws Exception {
         DocumentResponse document = response(12L, 7L, 0L);
         when(documentService.list(eq(7L), any(Pageable.class))).thenAnswer(invocation -> {

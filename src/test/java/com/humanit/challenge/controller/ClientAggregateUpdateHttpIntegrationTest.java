@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -95,6 +96,52 @@ class ClientAggregateUpdateHttpIntegrationTest {
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail").value("Document does not belong to client"))
                 .andExpect(jsonPath("$.instance").value("/api/clients/" + target.id()));
+    }
+
+    @Test
+    void getDocumentUnderNonOwningClientReturns404ProblemDetails() throws Exception {
+        ClientResponse nonOwner = createClientWithDocument("TAX-HTTP-NON-OWNER", "DOC-HTTP-NON-OWNER");
+        ClientResponse owner = createClientWithDocument("TAX-HTTP-DOCUMENT-OWNER", "DOC-HTTP-OWNED");
+        var foreignDocument = owner.documents().get(0);
+
+        mockMvc.perform(get("/api/clients/{clientId}/documents/{documentId}", nonOwner.id(), foreignDocument.id()))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Not Found"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("Document not found"))
+                .andExpect(jsonPath("$.instance").value(
+                        "/api/clients/" + nonOwner.id() + "/documents/" + foreignDocument.id()));
+    }
+
+    @Test
+    void postWithDuplicateClientTaxIdentifierReturns409WithoutPartialPersistence() throws Exception {
+        String taxIdentifier = "TAX-POST-DUPLICATE-CLIENT";
+        ClientResponse existingClient = createClientWithDocument(taxIdentifier, "DOC-DUPLICATE-CLIENT-EXISTING");
+        String attemptedDocumentNumber = "DOC-DUPLICATE-CLIENT-ROLLBACK";
+
+        mockMvc.perform(post("/api/clients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"firstName":"Grace","lastName":"Hopper","taxIdentifier":"%s",
+                                 "email":"duplicate-client@example.com","phoneNumber":"456",
+                                 "documents":[{"number":"%s","description":"must roll back",
+                                                "expirationDate":"2031-01-01"}]}
+                                """.formatted(taxIdentifier, attemptedDocumentNumber)))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Conflict"))
+                .andExpect(jsonPath("$.status").value(409));
+
+        entityManager.clear();
+        assertThat(clientRepository.findByTaxIdentifier(taxIdentifier))
+                .get()
+                .extracting(client -> client.getId())
+                .isEqualTo(existingClient.id());
+        assertThat(documentRepository.findByNumber(attemptedDocumentNumber)).isEmpty();
+        assertThat(documentRepository.findByNumber("DOC-DUPLICATE-CLIENT-EXISTING")).isPresent();
     }
 
     @Test
