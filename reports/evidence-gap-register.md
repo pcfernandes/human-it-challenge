@@ -38,4 +38,25 @@ Every new authorized task should either close a gap ID above or add a new one, k
 
 ---
 
-**Status of this register:** Initialized on 2026-11-09 with G-01 … G-10; all remain open.
+**Status of this register:** Initialized on 2026-11-09 with G-01 … G-10; all remain open (as of that date).
+
+---
+
+## 5. Gap closure status as of 2026-11-13
+
+The register above is retained as the 2026-11-09 historical record. Current closure status, based on repository and agent-report evidence:
+
+| ID | Current status | Closing evidence |
+|---|---|---|
+| G-01 | Closed (2026-11-09) | Standalone startup verified (`agent-reports/decisions.md` D-04; `target/standalone-run.log`) |
+| G-02 | Closed (reconstructed) | `agent-reports/T1.1/developer-report.md` |
+| G-03 | Closed (reconstructed) | `agent-reports/T1.1/tester-report.md` |
+| G-04 | Closed | `agent-reports/T1.1/reviewer-report.md` |
+| G-05 | Closed | `agent-reports/decisions.md` D-04 … D-15 |
+| G-06 | Closed | Git repository exists; `HEAD`/`main`/`origin/main` at `ce997e7`; see `agent-reports/T6.3/tester-report.md` and `reviewer-report.md` |
+| G-07 | Closed (this task) | `requirements-decisions.md` status lines updated 2026-11-13; `reports/task-status-report.md` Section 7 |
+| G-08 | Closed | `README.md` exists and validated (T4.3 / T5.3) |
+| G-09 | Closed (partially) | Approval dates recorded in `agent-reports/decisions.md` D-04 … D-15 (D-01 retains no dated record) |
+| G-10 | Closed | `agent-reports/` contains Architect/Developer/Tester/Reviewer reports and Maven evidence for T1.1–T6.3 |
+
+No new gaps were identified during T6.3. Remaining non-blocking observations are recorded in `agent-reports/T6.3/reviewer-report.md` (T63-REV-03 … T63-REV-06) and `agent-reports/T6.3/tester-report.md`.
