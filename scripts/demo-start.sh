@@ -19,7 +19,7 @@ get_env() {
         return
     fi
     local line
-    line="$(grep -E "^[[:space:]]*${key}=" "$ENV_FILE" | tail -n 1 || true)"
+    line="$(grep -E "^[[:space:]]*${key}=" "$ENV_FILE" | head -n 1 || true)"
     if [[ -z "$line" ]]; then
         printf ''
         return
@@ -45,14 +45,17 @@ set_env() {
     if grep -qE "^[[:space:]]*${key}=" "$ENV_FILE"; then
         key="$key" value="$value" awk '
             BEGIN { found = 0 }
-            $0 ~ "^" ENVIRON["key"] "=" {
-                if (!found) {
-                    print ENVIRON["key"] "=" ENVIRON["value"]
-                    found = 1
+            {
+                if ($0 ~ "^[[:space:]]*" ENVIRON["key"] "=") {
+                    if (!found) {
+                        print ENVIRON["key"] "=" ENVIRON["value"]
+                        found = 1
+                    }
+                    # Drop any duplicate keys so only the first occurrence remains.
+                    next
                 }
-                next
+                print
             }
-            { print }
         ' "$ENV_FILE" > "$ENV_FILE.tmp"
         mv "$ENV_FILE.tmp" "$ENV_FILE"
     else
@@ -72,6 +75,79 @@ random_base64() {
     else
         head -c "$bytes" /dev/urandom | base64 | tr -d '\n'
     fi
+}
+
+find_maven_jar() {
+    local artifact_path="$1"
+    local pattern="$2"
+    local base="$HOME/.m2/repository/$artifact_path"
+    if [[ ! -d "$base" ]]; then
+        return
+    fi
+    find "$base" -type f -name "$pattern" ! -name '*-sources.jar' ! -name '*-javadoc.jar' 2>/dev/null | sort -r | head -n 1
+}
+
+test_bcrypt_hash() {
+    local value="$1"
+    local re='^\$2[aby]\$(0[4-9]|[12][0-9]|3[01])\$[./A-Za-z0-9]{53}$'
+    [[ "$value" =~ $re ]]
+}
+
+new_bcrypt_hash() {
+    local password="$1"
+    if ! command_exists jshell; then
+        fail "JDK (jshell) is required to generate a BCrypt hash automatically. Install JDK 21 or provide APP_SECURITY_USER_PASSWORD_HASH manually."
+        exit 1
+    fi
+    local crypto_jar commons_jar classpath
+    crypto_jar="$(find_maven_jar "org/springframework/security/spring-security-crypto" "spring-security-crypto-*.jar")"
+    if [[ -z "$crypto_jar" ]]; then
+        fail "spring-security-crypto was not found in the local Maven repository. Run 'mvnw dependency:resolve' or install the project dependencies first."
+        exit 1
+    fi
+    commons_jar="$(find_maven_jar "commons-logging/commons-logging" "commons-logging-*.jar")"
+    classpath="$crypto_jar"
+    if [[ -n "$commons_jar" ]]; then
+        classpath="$crypto_jar:$commons_jar"
+    fi
+
+    local tmp_code tmp_out
+    tmp_code="$(mktemp)"
+    tmp_out="$(mktemp)"
+    printf '%s\n' \
+        'import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;' \
+        'String password = System.getenv("HUMANIT_PASSWORD");' \
+        'System.out.println(new BCryptPasswordEncoder().encode(password));' \
+        '/exit' > "$tmp_code"
+
+    local had_password=0
+    if [[ ${HUMANIT_PASSWORD+set} == set ]]; then
+        had_password=1
+    fi
+    local previous_password="${HUMANIT_PASSWORD-}"
+    export HUMANIT_PASSWORD="$password"
+
+    HUMANIT_PASSWORD="$password" jshell --class-path "$classpath" "$tmp_code" >"$tmp_out" 2>/dev/null
+    local status=$?
+
+    if [[ $had_password -eq 1 ]]; then
+        export HUMANIT_PASSWORD="$previous_password"
+    else
+        unset HUMANIT_PASSWORD
+    fi
+
+    rm -f "$tmp_code"
+    local hash
+    hash="$(tail -n 1 "$tmp_out" | tr -d '\r')"
+    hash="${hash#"${hash%%[![:space:]]*}"}"
+    hash="${hash%"${hash##*[![:space:]]}"}"
+    rm -f "$tmp_out"
+
+    if [[ $status -ne 0 ]] || ! test_bcrypt_hash "$hash"; then
+        fail "Failed to generate a valid BCrypt password hash."
+        exit 1
+    fi
+    printf '%s' "$hash"
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -145,16 +221,17 @@ fi
 
 app_password_hash="$(get_env APP_SECURITY_USER_PASSWORD_HASH)"
 if is_placeholder "$app_password_hash"; then
-    log "A BCrypt password hash is required."
-    log "Example: python3 -c \"import bcrypt; print(bcrypt.hashpw(b'your-password', bcrypt.gensalt()).decode())\""
-    read -r -s -p "Enter the BCrypt password hash: " entered_hash
+    log "Enter the application login password. It is read securely and hashed automatically with BCrypt."
+    read -r -s -p "Enter the application login password: " entered_password
     printf '\n'
-    if [[ -z "$entered_hash" ]]; then
-        fail "Password hash is required."
+    if [[ -z "$entered_password" ]]; then
+        fail "Application password is required."
         exit 1
     fi
-    set_env APP_SECURITY_USER_PASSWORD_HASH "'$entered_hash'"
-    log "Stored the password hash in .env (value not shown)."
+    generated_hash="$(new_bcrypt_hash "$entered_password")"
+    entered_password=""
+    set_env APP_SECURITY_USER_PASSWORD_HASH "'$generated_hash'"
+    log "Stored the BCrypt password hash in .env (value not shown)."
 fi
 
 log "Pulling $IMAGE ..."
