@@ -100,7 +100,7 @@ If the BCrypt hash contains `$`, single-quote it in `.env` so Compose treats it 
 APP_SECURITY_USER_PASSWORD_HASH='$2a$10$...'
 ```
 
-The helper scripts can create `.env`, generate the database password and JWT secret, and prompt for the missing username and password hash.
+The helper scripts can create `.env`, generate the database password and JWT secret, prompt for the missing username, and prompt for the application password securely and hash it automatically with BCrypt.
 
 ## 4. Start the demo
 

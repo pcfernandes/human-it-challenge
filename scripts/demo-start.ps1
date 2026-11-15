@@ -25,8 +25,9 @@ function Test-Command([string]$Name) {
 
 function Get-EnvValue([string]$Key) {
     if (-not (Test-Path -LiteralPath $envFile)) { return "" }
-    $pattern = "^\\s*$([regex]::Escape($Key))=(.*)$"
-    $line = @(Get-Content -LiteralPath $envFile) | Where-Object { $_ -match $pattern } | Select-Object -Last 1
+    $pattern = "^\s*$([regex]::Escape($Key))=(.*)$"
+    # Use the first occurrence so duplicate keys cannot override the value that Set-EnvValue retains.
+    $line = @(Get-Content -LiteralPath $envFile) | Where-Object { $_ -match $pattern } | Select-Object -First 1
     if ($null -eq $line) { return "" }
     $value = ($line -replace $pattern, '$1').Trim()
     if ($value.StartsWith("'") -and $value.EndsWith("'") -and $value.Length -ge 2) {
@@ -42,7 +43,7 @@ function Set-EnvValue([string]$Key, [string]$Value) {
     if (Test-Path -LiteralPath $envFile) {
         $lines = @(Get-Content -LiteralPath $envFile)
     }
-    $pattern = "^\\s*$([regex]::Escape($Key))="
+    $pattern = "^\s*$([regex]::Escape($Key))="
     $found = $false
     $updated = foreach ($line in $lines) {
         if ($line -match $pattern) {
@@ -71,6 +72,65 @@ function New-RandomBase64([int]$Bytes) {
     $buffer = New-Object byte[] $Bytes
     [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($buffer)
     return [Convert]::ToBase64String($buffer)
+}
+
+function Find-MavenJar([string]$ArtifactPath, [string]$Pattern) {
+    $base = Join-Path $env:USERPROFILE ".m2\repository\$ArtifactPath"
+    if (-not (Test-Path -LiteralPath $base)) { return "" }
+    $jar = @(Get-ChildItem -Path $base -Recurse -Filter $Pattern) |
+        Where-Object { $_.Name -notlike "*-sources.jar" -and $_.Name -notlike "*-javadoc.jar" } |
+        Sort-Object FullName -Descending |
+        Select-Object -First 1
+    if ($null -eq $jar) { return "" }
+    return $jar.FullName
+}
+
+function Test-BcryptHash([string]$Value) {
+    return $Value -match '^\$2[aby]\$(0[4-9]|[12][0-9]|3[01])\$[./A-Za-z0-9]{53}$'
+}
+
+function New-BcryptHash([string]$Password) {
+    if (-not (Test-Command "jshell")) {
+        Write-Fail "JDK (jshell) is required to generate a BCrypt hash automatically. Install JDK 21 or provide APP_SECURITY_USER_PASSWORD_HASH manually."
+        exit 1
+    }
+    $cryptoJar = Find-MavenJar "org\springframework\security\spring-security-crypto" "spring-security-crypto-*.jar"
+    if ([string]::IsNullOrWhiteSpace($cryptoJar)) {
+        Write-Fail "spring-security-crypto was not found in the local Maven repository. Run 'mvnw dependency:resolve' or install the project dependencies first."
+        exit 1
+    }
+    $commonsJar = Find-MavenJar "commons-logging\commons-logging" "commons-logging-*.jar"
+    $classpath = $cryptoJar
+    if (-not [string]::IsNullOrWhiteSpace($commonsJar)) {
+        $classpath = "$cryptoJar;$commonsJar"
+    }
+
+    $previous = $env:HUMANIT_PASSWORD
+    $env:HUMANIT_PASSWORD = $Password
+    $codeFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $code = @'
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+String password = System.getenv("HUMANIT_PASSWORD");
+System.out.println(new BCryptPasswordEncoder().encode(password));
+/exit
+'@
+        [System.IO.File]::WriteAllText($codeFile, $code, [System.Text.Encoding]::ASCII)
+        $output = & jshell --class-path $classpath $codeFile 2>$null
+        $hash = if ($null -eq $output) { "" } else { ($output | Select-Object -Last 1).ToString().Trim() }
+    } finally {
+        Remove-Item -LiteralPath $codeFile -ErrorAction SilentlyContinue
+        if ($null -eq $previous) {
+            Remove-Item Env:\HUMANIT_PASSWORD -ErrorAction SilentlyContinue
+        } else {
+            $env:HUMANIT_PASSWORD = $previous
+        }
+    }
+    if (-not (Test-BcryptHash $hash)) {
+        Write-Fail "Failed to generate a valid BCrypt password hash."
+        exit 1
+    }
+    return $hash
 }
 
 # Locate repository root from script location.
@@ -151,17 +211,19 @@ if (Test-Placeholder $appUsername) {
 
 $appPasswordHash = Get-EnvValue "APP_SECURITY_USER_PASSWORD_HASH"
 if (Test-Placeholder $appPasswordHash) {
-    Write-Info "A BCrypt password hash is required. Generate one with Python (bcrypt) or another BCrypt tool."
-    Write-Info "Example: python -c ""import bcrypt; print(bcrypt.hashpw(b'your-password', bcrypt.gensalt()).decode())"""
-    $secureHash = Read-Host "Enter the BCrypt password hash" -AsSecureString
-    $plainHash = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-        [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureHash))
-    if ([string]::IsNullOrWhiteSpace($plainHash)) {
-        Write-Fail "Password hash is required."
+    Write-Info "Enter the application login password. It is read securely and hashed automatically with BCrypt."
+    $securePassword = Read-Host "Enter the application login password" -AsSecureString
+    $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
+        [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword))
+    if ([string]::IsNullOrWhiteSpace($plainPassword)) {
+        Write-Fail "Application password is required."
         exit 1
     }
-    Set-EnvValue "APP_SECURITY_USER_PASSWORD_HASH" "'$plainHash'"
-    Write-Info "Stored the password hash in .env (value not shown)."
+    $generatedHash = New-BcryptHash $plainPassword
+    # Avoid retaining the plaintext password in script variables longer than necessary.
+    $plainPassword = $null
+    Set-EnvValue "APP_SECURITY_USER_PASSWORD_HASH" "'$generatedHash'"
+    Write-Info "Stored the BCrypt password hash in .env (value not shown)."
 }
 
 # Pull the published application image.
